@@ -136,7 +136,7 @@ func save_to_sqlDB(savePath:String = "") -> bool:
 	return true
 
 ### ----------------------------------------------------
-# Map - Set / Get / Remove
+# Map - Set / Get / Remove Tile
 ### ----------------------------------------------------
 
 

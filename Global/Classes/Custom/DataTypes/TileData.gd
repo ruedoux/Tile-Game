@@ -12,12 +12,16 @@ class_name TileData
 # Stores IDs on TileSets
 var IDDict:Dictionary # {TSName:tileID, ...}
 
+# Stores data regardning an entity on this tile
+var EntityData:String
+
 ### ----------------------------------------------------
 # FUNCTIONS
 ### ----------------------------------------------------
 
-func _init(tsdict:Dictionary = {}) -> void:
+func _init(tsdict:Dictionary = {}, eData = "") -> void:
 	IDDict = tsdict
+	EntityData = eData
 
 func add_to_IDDict(TSName:String, tileID:int = -1) -> void:
 	if(not IDDict.has(TSName)): IDDict[TSName] = {}
@@ -42,5 +46,3 @@ func check_IDDict_compatible(TSControl:Dictionary) -> bool:
 			isOK = false
 			break
 	return isOK
-
-	

@@ -11,7 +11,7 @@ extends "res://DevTools/MapEditor/MapEditorInput.gd"
 
 func _ready() -> void:
 	VisualServer.set_default_clear_color(Color.darkslateblue)
-	TileSelect.allTileMaps = $MapManager.get_tilemaps()
+	TileSelect.allTileMaps = $TileMapManager.get_tilemaps()
 	
 	if(not SaveManager._create_empty_save("MapEditorDefault", SaveManager.MAP_FOLDER, TileSelect.allTileMaps)):
 		push_error("Failed to init MapEditor")
@@ -73,7 +73,7 @@ func _draw_selection_chunk(mousePos:Vector2):
 
 # Draws squares around all loaded chunks
 func _draw_loaded_chunks():
-	for posV3 in $MapManager.LoadedChunks:
+	for posV3 in $TileMapManager.RenderedChunks:
 		var chunkScale:int = DATA.TILEMAPS.BASE_SCALE * DATA.TILEMAPS.CHUNK_SIZE
 		var posV2:Vector2 = LibK.Vectors.vec3_vec2(posV3) * chunkScale
 		var rect = Rect2(posV2, Vector2(chunkScale, chunkScale))

@@ -2,7 +2,7 @@
 
 [ext_resource path="res://DevTools/MapEditor/MapEditor.gd" type="Script" id=1]
 [ext_resource path="res://DevTools/MapEditor/Cam/Cam.gd" type="Script" id=2]
-[ext_resource path="res://Scenes/SimulationManager/MapManager/MapManager.tscn" type="PackedScene" id=3]
+[ext_resource path="res://Scenes/MapManager/TileMapManager/TileMapManager.tscn" type="PackedScene" id=3]
 [ext_resource path="res://DevTools/MapEditor/Procedural/Procedural.gd" type="Script" id=4]
 [ext_resource path="res://Resources/Themes/MapEditor.tres" type="Theme" id=5]
 
@@ -267,10 +267,10 @@ mouse_filter = 1
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="MapManager" parent="." instance=ExtResource( 3 )]
-
 [node name="Procedural" type="Node2D" parent="."]
 script = ExtResource( 4 )
+
+[node name="TileMapManager" parent="." instance=ExtResource( 3 )]
 
 [connection signal="text_entered" from="UIElements/MC/GC/Info/SaveEdit" to="." method="_on_SaveEdit_text_entered"]
 [connection signal="text_entered" from="UIElements/MC/GC/Info/LoadEdit" to="." method="_on_LoadEdit_text_entered"]
@@ -278,5 +278,3 @@ script = ExtResource( 4 )
 [connection signal="text_entered" from="UIElements/MC/GC/Info/Goto" to="." method="_on_GOTO_text_entered"]
 [connection signal="item_selected" from="UIElements/MC/GC/TileScroll/TMSelect" to="." method="_on_TMSelect_item_selected"]
 [connection signal="item_selected" from="UIElements/MC/GC/TileScroll/ItemList" to="." method="_on_ItemList_item_selected"]
-
-[editable path="MapManager"]

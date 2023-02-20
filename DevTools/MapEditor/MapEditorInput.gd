@@ -166,19 +166,19 @@ func set_selected_tile(tileID:int):
 	var posV3:Vector3 = LibK.Vectors.vec2_vec3(mousePos, $Cam.currentElevation)
 	var chunkV3:Vector3 = LibK.Vectors.vec2_vec3(LibK.Vectors.scale_down_vec2(mousePos, DATA.TILEMAPS.CHUNK_SIZE), $Cam.currentElevation)
 	
-	if not chunkV3 in $MapManager.LoadedChunks: return
+	if not chunkV3 in $TileMapManager.RenderedChunks: return
 	var TMName = tileMap.get_name()
 	
 	if tileID == -1:
 		var _r = SaveManager._CurrentMap.remove_TileData_on(TMName,posV3)
-		$MapManager.refresh_tile(posV3)
+		$TileMapManager.refresh_tile_on(posV3)
 		return
 	
 	var tileData = TileData.new()
 	tileData.add_to_IDDict(TMName, tileID)
 	if(not SaveManager._CurrentMap.set_TileData_on(posV3,tileData)):
 		Logger.logErr(["Failed to set tile: ", posV3," ", tileData], get_stack())
-	$MapManager.refresh_tile(posV3)
+	$TileMapManager.refresh_tile_on(posV3)
 
 ### ----------------------------------------------------
 # Filter Items
@@ -214,7 +214,7 @@ func update_MapManager_chunks():
 	for pos in posToRender:
 		chunksToRender.append(LibK.Vectors.vec2_vec3(pos,$Cam.currentElevation))
 	
-	$MapManager.update_visable_map(chunksToRender)
+	$TileMapManager._update_visable_map(chunksToRender)
 
 ### ----------------------------------------------------
 # Save / Load
@@ -249,7 +249,7 @@ func _on_LoadEdit_text_entered(mapName: String) -> void:
 		Logger.logErr(["Failed to load: ", mapName], get_stack())
 	
 	update_MapManager_chunks()
-	$MapManager.refresh_all_chunks()
+	$TileMapManager.unload_all_chunks()
 	_hide_lineEdit("isLoading", UIElement.LoadEdit)
 
 ### ----------------------------------------------------
@@ -292,7 +292,7 @@ func _elevation_input(event:InputEvent):
 func change_elevation(direction:int):
 	$Cam.currentElevation += direction
 	Info.ElevationLabel.text = "Elevation: " + str($Cam.currentElevation)
-	$MapManager.unload_all_chunks()
+	$TileMapManager.unload_all_chunks()
 
 ### ----------------------------------------------------
 # UI Control
