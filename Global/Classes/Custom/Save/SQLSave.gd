@@ -20,8 +20,10 @@ class_name SQLSave
 # VARIABLES
 ### ----------------------------------------------------
 
-# List of loaded chunks from sql to cache variables
-var SQLLoadedChunks := Array() # [ChunkPos, ChunkPos, ...]
+# List of loaded chunks from sql to cache variables with their access counter
+# Counter from every chunk is subtracted every time data is loaded
+# This allows to unload long not accessed chunk
+var SQLLoadedChunks := Dictionary() # {ChunkPos:accessCounter, ...}
 
 # Cache of all loaded data from sql
 # Holds map data (not meant to be editet directly!)
@@ -123,8 +125,8 @@ func save_to_sqlDB(savePath:String = "") -> bool:
 			Logger.logErr(["Unable to delete save file: ", savePath], get_stack())
 			return false
 	
-	for i in range(SQLLoadedChunks.size() - 1, -1, -1):
-		_unload_SQLChunk(SQLLoadedChunks[i])
+	for chunkV3 in SQLLoadedChunks.keys():
+		_unload_SQLChunk(chunkV3)
 	do_query("VACUUM;") # Vacuum save to reduce its size
 
 	var result := LibK.Files.copy_file(SQL_DB_GLOBAL.path, savePath)
@@ -197,12 +199,19 @@ func _load_SQLChunk(SQLChunkPos:Vector3) -> void:
 	elif(not converted is String): 
 		Logger.logErr(["Converted loaded sql chunk is not a Dictionary or String! Pos: ", SQLChunkPos], get_stack())
 	
-	SQLLoadedChunks.append(SQLChunkPos)
+	# Set countdown at max
+	SQLLoadedChunks[SQLChunkPos] = SQL_CT_UNLOAD_NUM
+
+	# Unload old chunks that were not used for a long time to save RAM
+	for chunkV3 in SQLLoadedChunks.keys():
+		SQLLoadedChunks[chunkV3] -= 1
+		if(SQLLoadedChunks[chunkV3] == 0):
+			_unload_SQLChunk(chunkV3)
 
 # Load data from MapData to SQLChunk
 func _unload_SQLChunk(SQLChunkPos:Vector3) -> void:
-	var PosToUnload = LibK.Vectors.vec3_get_pos_in_chunk(SQLChunkPos, MAPDATA_CHUNK_SIZE)
-	var DictToSave = {}
+	var PosToUnload := LibK.Vectors.vec3_get_pos_in_chunk(SQLChunkPos, MAPDATA_CHUNK_SIZE)
+	var DictToSave := {}
 	
 	for posV3 in PosToUnload:
 		if(not MapData.has(posV3)): continue
@@ -210,16 +219,12 @@ func _unload_SQLChunk(SQLChunkPos:Vector3) -> void:
 		MapData.erase(posV3)
 	
 	sql_save_compressed(var2str(DictToSave), TABLE_NAMES.keys()[TABLE_NAMES.MAPDATA_TABLE], SQLChunkPos)
+	
+	# Get rid of entry fully
 	SQLLoadedChunks.erase(SQLChunkPos)
 
 # Loads requested data from sql database
 # If data is being read from tiles close this should not cause much of performance drag
 func _update_SQLLoadedChunks(SQLChunkPos:Vector3) -> void:
 	if(SQLLoadedChunks.has(SQLChunkPos)): return # Chunk already loaded from sql
-	
 	_load_SQLChunk(SQLChunkPos)
-
-	# Unload old chunks that are not in range (iterate backwards)
-	for i in range(SQLLoadedChunks.size() - 1, -1, -1):
-		if(SQLLoadedChunks[i].distance_to(SQLChunkPos)>MAPDATA_UNLOAD_DS):
-			_unload_SQLChunk(SQLLoadedChunks[i])

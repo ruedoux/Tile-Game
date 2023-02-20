@@ -18,7 +18,7 @@ var FILE_DIR:String       # Database dir
 var beVerbose:bool        # For debug purposes
 
 const MAPDATA_CHUNK_SIZE = 64 # Size of SQLite data chunk
-const MAPDATA_UNLOAD_DS = 3   # Decides when to unload chunk (distance from last request)
+const SQL_CT_UNLOAD_NUM = 128 # Unload chunk if data wasnt requested for 128 updates (max loaded chunks number)
 
 # Names of all tables that need to be created
 enum TABLE_NAMES {METADATA_TABLE, MAPDATA_TABLE}

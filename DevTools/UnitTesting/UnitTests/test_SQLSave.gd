@@ -7,8 +7,8 @@ extends GutTestLOG
 # VARIABLES
 ### ----------------------------------------------------
 
-const _MMS = preload("res://Scenes/SimulationManager/MapManager/MapManager.tscn")
-var MapManager:Node = null
+const _TMM = preload("res://Scenes/MapManager/TileMapManager/TileMapManager.tscn")
+var TileMapManager:Node = null
 
 const SAV_FOLDER := "res://Temp"
 const SAV_NAME := "UnitTest"
@@ -18,8 +18,8 @@ const SAV_NAME := "UnitTest"
 ### ----------------------------------------------------
 
 func before_each():
-	MapManager = autoqfree(_MMS.instance())
-	add_child(MapManager)
+	TileMapManager = autoqfree(_TMM.instance())
+	add_child(TileMapManager)
 
 func get_regular(sqlsave:SQLSave, TestPosV3:Array, SavedData:Dictionary) -> void:
 	var GetTimer = STimer.new(Time.get_ticks_msec())
@@ -38,11 +38,11 @@ func get_bulk(sqlsave:SQLSave, TestChunks:Array, SavedData:Dictionary) -> void:
 
 func test_SQLSave():
 	var sqlsave := SQLSave.new(SAV_NAME, SAV_FOLDER)
-	assert_true(sqlsave.create_new_save(MapManager.TileMaps), "Failed to create new save")
+	assert_true(sqlsave.create_new_save(TileMapManager.TileMaps), "Failed to create new save")
 	assert_true(sqlsave.initialize(), "Failed to initialize SQLSave")
-	assert_true(sqlsave.check_compatible(MapManager.TileMaps), "Tilemaps are not compatible")
+	assert_true(sqlsave.check_compatible(TileMapManager.TileMaps), "Tilemaps are not compatible")
 
-	var RTileMap:TileMap = MapManager.TileMaps[randi()%MapManager.TileMaps.size()]
+	var RTileMap:TileMap = TileMapManager.TileMaps[randi()%TileMapManager.TileMaps.size()]
 	var RTileMapName:String = RTileMap.get_name()
 	var TileIds:Array = RTileMap.tile_set.get_tiles_ids()
 
@@ -77,7 +77,7 @@ func test_SQLSave():
 	# Simulate trying to access data after save
 	var sqlload := SQLSave.new(SAV_NAME, SAV_FOLDER)
 	assert_true(sqlload.initialize(), "Failed to initialize SQLSave")
-	assert_true(sqlload.check_compatible(MapManager.TileMaps), "Tilemaps are not compatible")
+	assert_true(sqlload.check_compatible(TileMapManager.TileMaps), "Tilemaps are not compatible")
 	
 	# Get tiles from save
 	var LGetTimer = STimer.new(Time.get_ticks_msec())
