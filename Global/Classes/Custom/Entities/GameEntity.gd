@@ -19,11 +19,6 @@ func _set_MapPosition(posV3:Vector3):
 	global_position = LibK.Vectors.vec3_vec2(posV3)
 	MapPosition = posV3
 
-
-func save_entity():
-	pass
-
-
 # Creates a copy of entity from its data string
 func from_str(s:String):
 	return from_array(str2var(s))
