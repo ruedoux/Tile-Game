@@ -45,3 +45,11 @@ static func blend_textures(textureBG:Texture, textureOutline:Texture, addColor:C
             blendImage.set_pixel(x, y, blendPixel)
     texture.create_from_image(blendImage, 0)
     return texture
+
+
+# Gets singular sprite from a set
+static func get_sprite_from_texture(spritePos:Vector2, spriteSize:Vector2, setTexture:Texture) -> Texture:
+	var atlas_texture := AtlasTexture.new()
+	atlas_texture.set_atlas(setTexture)
+	atlas_texture.set_region(Rect2(spritePos, spriteSize))
+	return atlas_texture

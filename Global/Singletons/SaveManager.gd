@@ -73,8 +73,12 @@ func get_TileData_on(posV3:Vector3) -> TileData:
 	return savResult
 
 # Wrapper function, remove tile in _CurrentSav
-func remove_TileData_on(TSName:String, posV3:Vector3) -> bool:
-	return _CurrentSav.remove_TileData_on(TSName, posV3)
+func remove_tile_from_TileData(TSName:String, posV3:Vector3) -> bool:
+	return _CurrentSav.remove_tile_from_TileData(TSName, posV3)
+
+# Wrapper function, remove entity in _CurrentSav
+func remove_Entity_from_TileData(posV3:Vector3) -> bool:
+	return _CurrentSav.remove_Entity_from_TileData(posV3)
 
 # Wrapper function, checks if tile was edited in _CurrentSav, if not get tile from _CurrentMap
 func get_TileData_on_chunk(chunkPosV3:Vector3, chunkSize:int) -> Dictionary:

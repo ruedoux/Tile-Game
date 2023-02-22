@@ -159,12 +159,21 @@ func get_TileData_on(posV3:Vector3) -> TileData:
 # Removes TSName from TileData IDDict
 # Returns false when data was not erased
 # Returns true when data was erased
-func remove_TileData_on(TSName:String, posV3:Vector3) -> bool:
+func remove_tile_from_TileData(TSName:String, posV3:Vector3) -> bool:
 	var editedTD := get_TileData_on(posV3)
 	if(editedTD.IDDict.empty()): return false
 	var erased := editedTD.erase_from_IDDict(TSName)
 	MapData[posV3] = str(editedTD)
 	return erased
+
+# Removes EntytyData from TileData on given position
+# Returns true if EntityData was erased
+func remove_Entity_from_TileData(posV3:Vector3) -> bool:
+	var editedTD := get_TileData_on(posV3)
+	if(editedTD.EntityData.empty()): return false
+	editedTD.EntityData = ""
+	MapData[posV3] = str(editedTD)
+	return true
 
 # Get positions in chunk, better optimized for getting a lot of data (no check for every tile)
 func get_TileData_on_chunk(chunkPosV3:Vector3, chunkSize:int) -> Dictionary:

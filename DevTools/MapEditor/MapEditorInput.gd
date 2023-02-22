@@ -170,7 +170,7 @@ func set_selected_tile(tileID:int):
 	var TMName = tileMap.get_name()
 	
 	if tileID == -1:
-		var _r = SaveManager._CurrentMap.remove_TileData_on(TMName,posV3)
+		var _r = SaveManager._CurrentMap.remove_tile_from_TileData(TMName,posV3)
 		$TileMapManager.refresh_tile_on(posV3)
 		return
 	
