@@ -62,15 +62,21 @@ func _save_map(MapName:String = "") -> bool:
 ### ----------------------------------------------------
 
 
-# Wrapper function, sets tile in _CurrentSav
+# Wrapper function, sets TileData in _CurrentSav
 func set_TileData_on(posV3:Vector3, tileData:TileData) -> bool:
 	return _CurrentSav.set_TileData_on(posV3, tileData)
 
-# Wrapper function, checks if tile was edited in _CurrentSav, if not get tile from _CurrentMap
-func get_TileData_on(posV3:Vector3) -> TileData:
-	var savResult := _CurrentSav.get_TileData_on(posV3)
-	if(savResult.IDDict.empty()): return _CurrentMap.get_TileData_on(posV3)
-	return savResult
+# Wrapper function, removes TileData in _CurrentSav
+func remove_TileData_on(posV3:Vector3) -> bool:
+	return _CurrentSav.remove_TileData_on(posV3)
+
+# Wrapper function, adds tile in _CurrentSav
+func add_tile_to_TileData(posV3:Vector3, TSName:String, tileID:int) -> bool:
+	return _CurrentSav.add_tile_to_TileData_on(posV3, TSName, tileID)
+
+# Wrapper function, adds Entity in _CurrentSav
+func add_Entity_to_TileData(posV3:Vector3, entity:GameEntity) -> bool:
+	return _CurrentSav.add_Entity_to_TileData(posV3, entity)
 
 # Wrapper function, remove tile in _CurrentSav
 func remove_tile_from_TileData(TSName:String, posV3:Vector3) -> bool:
@@ -80,10 +86,16 @@ func remove_tile_from_TileData(TSName:String, posV3:Vector3) -> bool:
 func remove_Entity_from_TileData(posV3:Vector3) -> bool:
 	return _CurrentSav.remove_Entity_from_TileData(posV3)
 
-# Wrapper function, checks if tile was edited in _CurrentSav, if not get tile from _CurrentMap
+# Wrapper function, checks if TileData was edited in _CurrentSav, if not get tile from _CurrentMap
+func get_TileData_on(posV3:Vector3) -> TileData:
+	var savResult := _CurrentSav.get_TileData_on(posV3)
+	if(savResult.is_empty()): return _CurrentMap.get_TileData_on(posV3)
+	return savResult
+
+# Wrapper function, checks if TileData was edited in _CurrentSav, if not get tile from _CurrentMap
 func get_TileData_on_chunk(chunkPosV3:Vector3, chunkSize:int) -> Dictionary:
 	var savResult := _CurrentSav.get_TileData_on_chunk(chunkPosV3, chunkSize)
 	var mapResult := _CurrentMap.get_TileData_on_chunk(chunkPosV3, chunkSize)
 	for posV3 in savResult:
-		if(savResult[posV3].IDDict.empty()): savResult[posV3] = mapResult[posV3]
+		if(savResult[posV3].is_empty()): savResult[posV3] = mapResult[posV3]
 	return savResult

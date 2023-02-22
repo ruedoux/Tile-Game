@@ -19,7 +19,7 @@ var EntityData:String
 # FUNCTIONS
 ### ----------------------------------------------------
 
-func _init(tsdict:Dictionary = {}, eData = "") -> void:
+func _init(tsdict:Dictionary = {}, eData:String = "") -> void:
 	IDDict = tsdict
 	EntityData = eData
 
@@ -46,3 +46,8 @@ func check_IDDict_compatible(TSControl:Dictionary) -> bool:
 			isOK = false
 			break
 	return isOK
+
+# checks whether TileData is empty (no data is saved)
+func is_empty() -> bool:
+	if(IDDict.empty() and EntityData.empty()): return true
+	return false

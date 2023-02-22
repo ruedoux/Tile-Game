@@ -38,7 +38,8 @@ var TS_CONTROL := Dictionary() # { TSName:{tileID:tileName} }
 ### ----------------------------------------------------
 
 func _init(fileName:String, fileDir:String, verbose = false).(fileName, fileDir, verbose) -> void:
-	Logger.logMS(["Created new SQLSave Object: ", FILE_DIR, " ", FILE_NAME])
+	#Logger.logMS(["Created new SQLSave Object: ", FILE_DIR, " ", FILE_NAME])
+	pass
 
 # Should be called after init before trying to acess data from save
 # Loads all metadata to cache variables, copies save to temp
@@ -142,29 +143,44 @@ func save_to_sqlDB(savePath:String = "") -> bool:
 ### ----------------------------------------------------
 
 
-# Sets TileData on a given position
+# Sets TileData on a given position (with compatibility check, not meant for bulk)
 func set_TileData_on(posV3:Vector3, tileData:TileData) -> bool:
-	# No need to call _update_SQLLoadedChunks (its called in get_TileData_on())
 	if(not tileData.check_IDDict_compatible(TS_CONTROL)): return false
-	tileData.IDDict.merge(get_TileData_on(posV3).IDDict) 
+	_update_SQLLoadedChunks(LibK.Vectors.scale_down_vec3(posV3, MAPDATA_CHUNK_SIZE))
 	MapData[posV3] = str(tileData)
 	return true
 
-# Returns tile on a given position, returns a new empty tiledata on fail
-func get_TileData_on(posV3:Vector3) -> TileData:
-	_update_SQLLoadedChunks(LibK.Vectors.scale_down_vec3(posV3, MAPDATA_CHUNK_SIZE))
-	if(not MapData.has(posV3)): return TileData.new()
-	return TileData.new().from_str(MapData[posV3])
+# Removes TileData on a position permamently
+# Retruns true if data was erased
+func remove_TileData_on(posV3:Vector3) -> bool:
+	return MapData.erase(posV3)
+
+# Adds tile to TileData on a given position (with compatibility check, not meant for bulk)
+func add_tile_to_TileData_on(posV3:Vector3, TSName:String, tileID:int) -> bool:
+	if(not TS_CONTROL.has(TSName)): return false
+	if(not TS_CONTROL[TSName].has(tileID)): return false
+	# Get via function to avoid tying to add tile to not existing TileData entry in MapData
+	var editedTD := get_TileData_on(posV3)
+	editedTD.add_to_IDDict(TSName, tileID)
+	MapData[posV3] = str(editedTD)
+	return true
 
 # Removes TSName from TileData IDDict
 # Returns false when data was not erased
-# Returns true when data was erased
 func remove_tile_from_TileData(TSName:String, posV3:Vector3) -> bool:
 	var editedTD := get_TileData_on(posV3)
 	if(editedTD.IDDict.empty()): return false
 	var erased := editedTD.erase_from_IDDict(TSName)
 	MapData[posV3] = str(editedTD)
 	return erased
+
+# Adds entity data on a given position
+func add_Entity_to_TileData(posV3:Vector3, entity:GameEntity) -> bool:
+	# Get via function to avoid tying to add tile to not existing TileData entry in MapData
+	var editedTD := get_TileData_on(posV3)
+	editedTD.EntityData = str(entity)
+	MapData[posV3] = str(editedTD)
+	return true
 
 # Removes EntytyData from TileData on given position
 # Returns true if EntityData was erased
@@ -174,6 +190,13 @@ func remove_Entity_from_TileData(posV3:Vector3) -> bool:
 	editedTD.EntityData = ""
 	MapData[posV3] = str(editedTD)
 	return true
+
+# Returns tile on a given position (with compatibility check, not meant for bulk)
+# Returns a new empty tiledata on fail
+func get_TileData_on(posV3:Vector3) -> TileData:
+	_update_SQLLoadedChunks(LibK.Vectors.scale_down_vec3(posV3, MAPDATA_CHUNK_SIZE))
+	if(not MapData.has(posV3)): return TileData.new()
+	return TileData.new().from_str(MapData[posV3])
 
 # Get positions in chunk, better optimized for getting a lot of data (no check for every tile)
 func get_TileData_on_chunk(chunkPosV3:Vector3, chunkSize:int) -> Dictionary:

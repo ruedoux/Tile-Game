@@ -26,12 +26,22 @@ var TexturePos := Vector2(0,0)
 
 func _ready() -> void:
 	set_sprite(TexturePos, SPRITE_SET_PATH)
+	if(not connect("unloaded_chunk", get_parent(), "unload_entity") == OK):
+		Logger.logErr(["Failed to connect entity to EntityManager (parent), pos: ", MapPosition], get_stack())
 
 # Loads sprite from sprite set
 func set_sprite(spritePos:Vector2, texturePath:String) -> void:
 	var setTexture:Texture = ResourceLoader.load(texturePath, "Texture")
 	texture = LibK.Img.get_sprite_from_texture(spritePos, DATA.TILEMAPS.TILE_SIZE, setTexture)
 
+# Unloads itself into TileData and queue_free()
+func unload_entity(unloadedChunkV3:Vector3) -> void:
+	if(not unloadedChunkV3 == LibK.Vectors.scale_down_vec3(MapPosition, DATA.TILEMAPS.CHUNK_SIZE)): 
+		return
+	if(not SaveManager.add_Entity_to_TileData(MapPosition, self)):
+		Logger.logErr(["Failed to save entity data on unload, pos: ", MapPosition],get_stack())
+	queue_free()
+	
 ### ----------------------------------------------------
 # Utils
 ### ----------------------------------------------------
