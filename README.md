@@ -5,7 +5,7 @@ About
 -----
 Ongoing game project made in Godot engine. Inspired by games like [Dwarf Fortress](http://www.bay12games.com/dwarves/) and [CDDA](https://cataclysmdda.org/). 
 
-System Overview
+Overview
 ---------
 
 **Save system**
