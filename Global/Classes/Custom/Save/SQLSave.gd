@@ -30,6 +30,9 @@ var SQLLoadedChunks := Dictionary() # {ChunkPos:accessCounter, ...}
 # { PackedPos:TileData }
 var MapData := Dictionary()
 
+# Holds data regarding game state, loaded from GAMESTATE_TABLE on initialize()
+var GameState := Dictionary()
+
 # Holds TileSet data
 var TS_CONTROL := Dictionary() # { TSName:{tileID:tileName} }
 
@@ -54,13 +57,21 @@ func initialize() -> bool:
 		return false
 	
 	# Initialize TS_CONTROL
-	var tempArr = str2var(sql_load_compressed(TABLE_NAMES.keys()[TABLE_NAMES.METADATA_TABLE], "TS_CONTROL"))
-	if(not tempArr is Dictionary):
+	var tempVar = str2var(sql_load_compressed(TABLE_NAMES.keys()[TABLE_NAMES.METADATA_TABLE], "TS_CONTROL"))
+	if(not tempVar is Dictionary):
 		Logger.logErr(["Failed do initialize TS_CONTROL from SQL save, str2var is not Dictionary: ", SQL_DB_GLOBAL.path], get_stack())
 		return false
 	
-	TS_CONTROL = tempArr
+	TS_CONTROL = tempVar
 
+	# Initialize GameState
+	if(column_exists(TABLE_NAMES.keys()[TABLE_NAMES.GAMESTATE_TABLE], "GameState")):
+		tempVar = str2var(sql_load_compressed(TABLE_NAMES.keys()[TABLE_NAMES.GAMESTATE_TABLE], "GameState"))
+		if(not tempVar is Dictionary):
+			Logger.logErr(["Failed do initialize GameState from SQL save, str2var is not Dictionary: ", SQL_DB_GLOBAL.path], get_stack())
+			return false
+		MapData = tempVar
+	
 	if(beVerbose): Logger.logMS(["Initialized save: ", DEST_PATH, " -> ", SQL_DB_GLOBAL.path])
 	return true
 	
@@ -217,7 +228,7 @@ func get_TileData_on_chunk(chunkPosV3:Vector3, chunkSize:int) -> Dictionary:
 	return resultDict
 
 ### ----------------------------------------------------
-# Data from sql management
+# Chunk Data System Management
 ### ----------------------------------------------------
 
 

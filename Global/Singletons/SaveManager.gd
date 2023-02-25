@@ -57,6 +57,15 @@ func save_sav(SaveName:String) -> bool:
 func _save_map(MapName:String = "") -> bool:
 	return _CurrentMap.save_to_sqlDB(MAP_FOLDER + MapName + ".db")
 
+func _delete_map(MapName:String = "") -> int:
+	return LibK.Files.delete_file(MAP_FOLDER + MapName + ".db")
+
+func delete_sav(SaveName:String = "") -> int:
+	return LibK.Files.delete_file(SAV_FOLDER + SaveName + ".db")
+
+func delete_db(dbName:String, folderPath:String) -> int:
+	return LibK.Files.delete_file(folderPath + dbName + ".db")
+
 ### ----------------------------------------------------
 ### Set / get / Remove
 ### ----------------------------------------------------

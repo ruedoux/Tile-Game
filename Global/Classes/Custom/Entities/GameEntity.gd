@@ -26,8 +26,6 @@ var TexturePos := Vector2(0,0)
 
 func _ready() -> void:
 	set_sprite(TexturePos, SPRITE_SET_PATH)
-	if(not connect("unloaded_chunk", get_parent(), "unload_entity") == OK):
-		Logger.logErr(["Failed to connect entity to EntityManager (parent), pos: ", MapPosition], get_stack())
 
 # Loads sprite from sprite set
 func set_sprite(spritePos:Vector2, texturePath:String) -> void:

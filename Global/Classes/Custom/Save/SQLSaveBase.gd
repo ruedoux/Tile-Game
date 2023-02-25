@@ -21,7 +21,10 @@ const MAPDATA_CHUNK_SIZE = 64 # Size of SQLite data chunk
 const SQL_CT_UNLOAD_NUM = 128 # Unload chunk if data wasnt requested for 128 updates (max loaded chunks number)
 
 # Names of all tables that need to be created
-enum TABLE_NAMES {METADATA_TABLE, MAPDATA_TABLE}
+# METADATA_TABLE - Holds data regarding metadata (game version tilesets, ect)
+# MAPDATA_TABLE - Holds data regarding the map
+# GAMESTATE_TABLE - Holds data regarding game state (player, quests, ect)
+enum TABLE_NAMES {METADATA_TABLE, MAPDATA_TABLE, GAMESTATE_TABLE}
 # Content of all tables
 const TABLE_CONTENT = { 
 	"Key":{"primary_key":true,"data_type":"text", "not_null": true},

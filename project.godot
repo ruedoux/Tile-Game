@@ -85,6 +85,8 @@ SaveManager="*res://Global/Singletons/SaveManager.gd"
 
 [debug]
 
+gdscript/warnings/unused_variable=false
+gdscript/warnings/return_value_discarded=false
 gdscript/warnings/integer_division=false
 
 [editor_plugins]

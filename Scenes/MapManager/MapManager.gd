@@ -24,31 +24,17 @@ var LoadedChunks:Array = [] # [ Vector3, ... ]
 # FUNCTIONS
 ### ----------------------------------------------------
 
-func _ready() -> void:
-	if(not SaveManager._create_empty_save("SMtest", SaveManager.SAV_FOLDER, $MapManager.TileMaps)):
-		push_error("Failed to init")
-		get_tree().quit()
-	if(not SaveManager._create_empty_save("SMtest", SaveManager.MAP_FOLDER, $MapManager.TileMaps)):
-		push_error("Failed to init")
-		get_tree().quit()
-	start_simulation("SMtest","SMtest")
-
 # Starts and initializes a given game save
 func start_simulation(SaveName:String, MapName:String) -> bool:
-	if(not SaveManager.load_sav(SaveName, MapName, $MapManager.TileMaps)):
+	if(not SaveManager.load_sav(SaveName, MapName, $MapManager.get_node("TileMapManager").TileMaps)):
 		Logger.logErr(["Failed to load save: ", SaveName, " ", MapName], get_stack())
 		return false
-	
-	GameFocusEntity = GameEntity.new()
-	SimulatedEntities.append(GameFocusEntity)
-	
 	update_simulation()
 	return true
 
 # Ran every single tick
 func update_simulation() -> void:
-	$MapManager.update_map(
-		get_chunks_to_load(), 
+	update_map(get_chunks_to_load(),
 		LibK.Vectors.vec3_get_pos_in_chunk(GameFocusEntity.MapPosition, SIM_RANGE))
 
 # Gets chunks that need to be loaded to the map depending on SimulatedEntities
