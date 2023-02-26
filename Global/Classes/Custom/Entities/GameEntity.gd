@@ -9,8 +9,6 @@ class_name GameEntity
 # VARIABLES
 ### ----------------------------------------------------
 
-const SPRITE_SET_PATH = "res://Resources/Textures/EntitySet.png"
-
 # Position on the game map
 var MapPosition := Vector3(0,0,0) setget _set_MapPosition
 func _set_MapPosition(posV3:Vector3):
@@ -25,7 +23,11 @@ var TexturePos := Vector2(0,0)
 ### ----------------------------------------------------
 
 func _ready() -> void:
-	set_sprite(TexturePos, SPRITE_SET_PATH)
+	_on_entity_ready()
+
+# Function called on ready (to overwrite if needed)
+func _on_entity_ready() -> void:
+	set_sprite(TexturePos, DATA.TEXTURES.ENTITY_SET_PATH)
 
 # Loads sprite from sprite set
 func set_sprite(spritePos:Vector2, texturePath:String) -> void:

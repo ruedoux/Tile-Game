@@ -26,9 +26,14 @@ var LoadedChunks:Array = [] # [ Vector3, ... ]
 
 # Starts and initializes a given game save
 func start_simulation(SaveName:String, MapName:String) -> bool:
-	if(not SaveManager.load_sav(SaveName, MapName, $MapManager.get_node("TileMapManager").TileMaps)):
+	if(not SaveManager.load_sav(SaveName, MapName, $TileMapManager.TileMaps)):
 		Logger.logErr(["Failed to load save: ", SaveName, " ", MapName], get_stack())
 		return false
+	
+	var Player := SaveManager.get_PlayerEntity()
+	$EntityManager.load_player(Player)
+	GameFocusEntity = Player
+
 	update_simulation()
 	return true
 

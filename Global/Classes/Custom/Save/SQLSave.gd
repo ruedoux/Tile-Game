@@ -27,11 +27,8 @@ var SQLLoadedChunks := Dictionary() # {ChunkPos:accessCounter, ...}
 
 # Cache of all loaded data from sql
 # Holds map data (not meant to be editet directly!)
-# { PackedPos:TileData }
+# { posV3:TileData }
 var MapData := Dictionary()
-
-# Holds data regarding game state, loaded from GAMESTATE_TABLE on initialize()
-var GameState := Dictionary()
 
 # Holds TileSet data
 var TS_CONTROL := Dictionary() # { TSName:{tileID:tileName} }
@@ -51,55 +48,24 @@ func initialize() -> bool:
 		Logger.logErr(["Unable to initialize save, file doesnt exist: ", DEST_PATH], get_stack())
 		return false
 	
-	var result := LibK.Files.copy_file(DEST_PATH, SQL_DB_GLOBAL.path)
+	var result := LibK.Files.copy_file(DEST_PATH, TEMP_PATH)
 	if(not result == OK):
-		Logger.logErr(["Failed to copy db from temp to save: ", DEST_PATH, " -> ", SQL_DB_GLOBAL.path], get_stack())
+		Logger.logErr(["Failed to copy db from dest to temp: ", DEST_PATH, " -> ", TEMP_PATH], get_stack())
 		return false
 	
 	# Initialize TS_CONTROL
-	var tempVar = str2var(sql_load_compressed(TABLE_NAMES.keys()[TABLE_NAMES.METADATA_TABLE], "TS_CONTROL"))
+	var tempVar = str2var(sql_load_compressed(
+		TABLE_NAMES.keys()[TABLE_NAMES.GAMEDATA_TABLE],
+		GAMEDATA_KEYS.keys()[GAMEDATA_KEYS.TS_CONTROL]))
+	
 	if(not tempVar is Dictionary):
-		Logger.logErr(["Failed do initialize TS_CONTROL from SQL save, str2var is not Dictionary: ", SQL_DB_GLOBAL.path], get_stack())
+		Logger.logErr(["Failed do initialize TS_CONTROL from SQL save, str2var is not Dictionary: ", TEMP_PATH], get_stack())
 		return false
 	
 	TS_CONTROL = tempVar
-
-	# Initialize GameState
-	if(column_exists(TABLE_NAMES.keys()[TABLE_NAMES.GAMESTATE_TABLE], "GameState")):
-		tempVar = str2var(sql_load_compressed(TABLE_NAMES.keys()[TABLE_NAMES.GAMESTATE_TABLE], "GameState"))
-		if(not tempVar is Dictionary):
-			Logger.logErr(["Failed do initialize GameState from SQL save, str2var is not Dictionary: ", SQL_DB_GLOBAL.path], get_stack())
-			return false
-		MapData = tempVar
 	
-	if(beVerbose): Logger.logMS(["Initialized save: ", DEST_PATH, " -> ", SQL_DB_GLOBAL.path])
+	if(beVerbose): Logger.logMS(["Initialized save: ", DEST_PATH, " -> ", TEMP_PATH])
 	return true
-	
-# If save already exists, create a new one and put old one in the trash
-func create_new_save(TileMaps:Array) -> bool:
-	if(LibK.Files.file_exist(DEST_PATH)):
-		if(OS.move_to_trash(ProjectSettings.globalize_path(DEST_PATH)) != OK):
-			Logger.logErr(["Unable to delete save file: ", DEST_PATH], get_stack())
-			return false
-
-	var result := LibK.Files.create_empty_file(DEST_PATH)
-	if(result != OK):
-		Logger.logErr(["Unable to create empty save file: ", DEST_PATH, ", err: ", result], get_stack())
-		return false
-	
-	SQL_DB_GLOBAL.path = DEST_PATH
-	var isOK := true
-	for TID in TABLE_NAMES.values():
-		var tableName:String = TABLE_NAMES.keys()[TID]
-		isOK = isOK and add_table(tableName, TABLE_CONTENT)
-	isOK = isOK and fill_METADATA_TABLE(TileMaps)
-	SQL_DB_GLOBAL.path = FILE_DIR + FILE_NAME +"_TEMP.db"
-	
-	if(not isOK):
-		Logger.logErr(["Failed to create tables: ", DEST_PATH], get_stack())
-		return isOK
-	Logger.logMS(["Created DataBase at: ", DEST_PATH])
-	return isOK
 
 # Check if the current tilemaps are compatible with TS_CONTROL tilemaps
 func check_compatible(TileMaps:Array) -> bool:
@@ -141,16 +107,35 @@ func save_to_sqlDB(savePath:String = "") -> bool:
 		_unload_SQLChunk(chunkV3)
 	do_query("VACUUM;") # Vacuum save to reduce its size
 
-	var result := LibK.Files.copy_file(SQL_DB_GLOBAL.path, savePath)
+	var result := LibK.Files.copy_file(TEMP_PATH, savePath)
 	if(not result == OK):
-		Logger.logErr(["Failed to copy db from temp to save: ", SQL_DB_GLOBAL.path, " -> ", savePath, ", result: ", result], get_stack())
+		Logger.logErr(["Failed to copy db from temp to save: ", TEMP_PATH, " -> ", savePath, ", result: ", result], get_stack())
 		return false
 	
 	Logger.logMS(["Saved SQLSave: ", savePath])
 	return true
 
 ### ----------------------------------------------------
-# Map - Set / Get / Remove Tile
+# GameData control
+### ----------------------------------------------------
+
+
+# Returns saved player data from save
+func get_PlayerEntity() -> PlayerEntity:
+	var PlayerEntityStr = sql_load_compressed(
+		TABLE_NAMES.keys()[TABLE_NAMES.GAMEDATA_TABLE],
+		GAMEDATA_KEYS.keys()[GAMEDATA_KEYS.PLAYER_DATA])
+	return PlayerEntity.new().from_str(PlayerEntityStr)
+
+# Saves Player Entity
+func set_PlayerEntity(Player:PlayerEntity) -> void:
+	sql_save_compressed(
+		Player.to_string(),
+		TABLE_NAMES.keys()[TABLE_NAMES.GAMEDATA_TABLE],
+		GAMEDATA_KEYS.keys()[GAMEDATA_KEYS.PLAYER_DATA])
+
+### ----------------------------------------------------
+# MapData control
 ### ----------------------------------------------------
 
 

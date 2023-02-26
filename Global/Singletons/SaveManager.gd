@@ -108,3 +108,6 @@ func get_TileData_on_chunk(chunkPosV3:Vector3, chunkSize:int) -> Dictionary:
 	for posV3 in savResult:
 		if(savResult[posV3].is_empty()): savResult[posV3] = mapResult[posV3]
 	return savResult
+
+func get_PlayerEntity() -> PlayerEntity:
+	return _CurrentSav.get_PlayerEntity()

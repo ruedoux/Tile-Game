@@ -12,9 +12,16 @@ extends Node2D
 var RenderedChunks := Array()
 signal unloaded_chunk(chunkV3)
 
+# Reference to the player
+var PlayerRef:PlayerEntity
+
 ### ----------------------------------------------------
 # FUNCTIONS
 ### ----------------------------------------------------
+
+func load_player(Player:PlayerEntity) -> void:
+	PlayerRef = Player
+	add_child(Player)
 
 # Loads entities on a given chunk and drops them as a child node
 func load_entities_on_chunk(chunkV3:Vector3, DataDict:Dictionary) -> void:

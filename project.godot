@@ -39,6 +39,11 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://Global/Classes/LibK.gd"
 }, {
+"base": "GameEntity",
+"class": "PlayerEntity",
+"language": "GDScript",
+"path": "res://Global/Classes/Custom/Entities/PlayerEntity.gd"
+}, {
 "base": "Reference",
 "class": "SQLSave",
 "language": "GDScript",
@@ -66,6 +71,7 @@ _global_script_class_icons={
 "GutTest": "",
 "GutTestLOG": "",
 "LibK": "",
+"PlayerEntity": "",
 "SQLSave": "",
 "SQLiteWrapper": "",
 "STimer": "",

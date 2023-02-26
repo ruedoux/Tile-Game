@@ -40,8 +40,6 @@ class MATERIALS:
 		
 		return isOK
 
-
-
 class INPUT:
 
 	# Stores data about what key translates to what action in input map
@@ -64,13 +62,15 @@ class INPUT:
 		"-" : "Minus",
 	}
 
-
 class TILEMAPS: # Stores data regardning map, TileMaps ect
 	const TILEMAPS_DIR:String = "res://Resources/TileMaps/"
 	const SIM_RANGE = 1   # How far (chunks) world will generate 
 	const CHUNK_SIZE = 8  # Keep it 2^x (min 8,max 32 - for both performance and drawing reasons)
 	const BASE_SCALE = 16 # Pixel size of tiles
 	const TILE_SIZE = Vector2(BASE_SCALE, BASE_SCALE) # Size of a tile
+
+class TEXTURES:
+	const ENTITY_SET_PATH = "res://Resources/Textures/EntitySet.png"
 
 ### ----------------------------------------------------
 # FUNCTIONS

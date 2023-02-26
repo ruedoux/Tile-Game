@@ -12,19 +12,20 @@ const SQLite := preload("res://addons/godot-sqlite/bin/gdsqlite.gdns")
 const SQLCOMPRESSION = 2  # Compression mode, https://docs.godotengine.org/en/stable/classes/class_file.html#enum-file-compressionmode
 
 var SQL_DB_GLOBAL:SQLite  # SQLite object assigned to SaveManager
-var DEST_PATH:String      # Source of save
-var FILE_NAME:String	  # Database name
-var FILE_DIR:String       # Database dir
+var DEST_PATH:String      # The main save file path
+var TEMP_PATH:String	  # Temp save file path
+var FILE_NAME:String	  # Name of the database file
+var FILE_DIR:String       # Database file dir
 var beVerbose:bool        # For debug purposes
 
 const MAPDATA_CHUNK_SIZE = 64 # Size of SQLite data chunk
 const SQL_CT_UNLOAD_NUM = 128 # Unload chunk if data wasnt requested for 128 updates (max loaded chunks number)
 
 # Names of all tables that need to be created
-# METADATA_TABLE - Holds data regarding metadata (game version tilesets, ect)
-# MAPDATA_TABLE - Holds data regarding the map
-# GAMESTATE_TABLE - Holds data regarding game state (player, quests, ect)
-enum TABLE_NAMES {METADATA_TABLE, MAPDATA_TABLE, GAMESTATE_TABLE}
+enum TABLE_NAMES {GAMEDATA_TABLE, MAPDATA_TABLE}
+# Keys in GameData table (compressed dicts are values)
+enum GAMEDATA_KEYS {TS_CONTROL, PLAYER_DATA}
+
 # Content of all tables
 const TABLE_CONTENT = { 
 	"Key":{"primary_key":true,"data_type":"text", "not_null": true},
@@ -42,14 +43,13 @@ func _init(fileName:String, fileDir:String, verbose = false) -> void:
 	FILE_DIR = fileDir
 	FILE_NAME = fileName
 	DEST_PATH = FILE_DIR + FILE_NAME +".db"
+	TEMP_PATH = FILE_DIR + FILE_NAME +"_TEMP.db"
 
 	SQL_DB_GLOBAL = SQLite.new()
-	SQL_DB_GLOBAL.path = FILE_DIR + FILE_NAME +"_TEMP.db"
+	SQL_DB_GLOBAL.path = TEMP_PATH
 	SQL_DB_GLOBAL.verbosity_level = 0
 
-# Called when creating new save to have a template of tileset tiles
-func fill_METADATA_TABLE(TileMaps:Array) -> bool:
-	var isOK:bool = true
+func fill_GAMEDATA_TABLE(TileMaps:Array) -> void:
 	var TSControlTemp := Dictionary()
 	for tileMap in TileMaps:
 		var TSName:String = tileMap.get_name()
@@ -60,11 +60,17 @@ func fill_METADATA_TABLE(TileMaps:Array) -> bool:
 		for index in range(tileNamesIDs.size()):
 			TSControlTemp[TSName][tileNamesIDs[index][1]] = tileNamesIDs[index][0]
 	
-	sql_save_compressed(var2str(TSControlTemp).replace(" ", ""), 
-		TABLE_NAMES.keys()[TABLE_NAMES.METADATA_TABLE], "TS_CONTROL")
-
-	if(not isOK): Logger.logErr(["Failed to fill TSControl table"], get_stack())
-	return isOK
+	sql_save_compressed(
+		var2str(TSControlTemp).replace(" ", ""), 
+		TABLE_NAMES.keys()[TABLE_NAMES.GAMEDATA_TABLE], 
+		GAMEDATA_KEYS.keys()[GAMEDATA_KEYS.TS_CONTROL])
+	
+	var TemplatePlayer := PlayerEntity.new()
+	sql_save_compressed(
+		TemplatePlayer.to_string(),
+		TABLE_NAMES.keys()[TABLE_NAMES.GAMEDATA_TABLE],
+		GAMEDATA_KEYS.keys()[GAMEDATA_KEYS.PLAYER_DATA])
+	TemplatePlayer.queue_free()
 
 # Compresses and saves data in sqlite db
 # Designed to compress big data chunks
@@ -82,6 +88,30 @@ func sql_load_compressed(tableName:String, KeyVar) -> String:
 
 	if(beVerbose): Logger.logMS(["Loaded CData from SQLite: ", tableName, " ", KeyVar])
 	return LibK.Compression.decompress_str(queryResult[0]["CData"], SQLCOMPRESSION, queryResult[0]["DCSize"])
+
+# If save already exists, create a new one and put old one in the trash
+func create_new_save(TileMaps:Array) -> bool:
+	if(LibK.Files.file_exist(DEST_PATH)):
+		if(OS.move_to_trash(ProjectSettings.globalize_path(DEST_PATH)) != OK):
+			Logger.logErr(["Unable to delete save file: ", DEST_PATH], get_stack())
+			return false
+
+	var result := LibK.Files.create_empty_file(DEST_PATH)
+	if(result != OK):
+		Logger.logErr(["Unable to create empty save file: ", DEST_PATH, ", err: ", result], get_stack())
+		return false
+	
+	SQL_DB_GLOBAL.path = DEST_PATH # Save everything in destination instead of temp file
+	var isOK := true
+	for TID in TABLE_NAMES.values():
+		var tableName:String = TABLE_NAMES.keys()[TID]
+		isOK = isOK and add_table(tableName, TABLE_CONTENT)
+	fill_GAMEDATA_TABLE(TileMaps)
+	SQL_DB_GLOBAL.path = TEMP_PATH
+	
+	if(not isOK): Logger.logErr(["Failed to create tables: ", DEST_PATH], get_stack())
+	elif(isOK):   Logger.logMS(["Created DataBase at: ", DEST_PATH])
+	return isOK
 
 ### ----------------------------------------------------
 # Queries, these are not meant to be used where speed matters (open and close db in every function which is slow)
