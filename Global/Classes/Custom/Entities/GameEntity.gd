@@ -38,9 +38,13 @@ func set_sprite(spritePos:Vector2, texturePath:String) -> void:
 func unload_entity(unloadedChunkV3:Vector3) -> void:
 	if(not unloadedChunkV3 == LibK.Vectors.scale_down_vec3(MapPosition, DATA.TILEMAPS.CHUNK_SIZE)): 
 		return
-	if(not SaveManager.add_Entity_to_TileData(MapPosition, self)):
+	if(not save_entity()):
 		Logger.logErr(["Failed to save entity data on unload, pos: ", MapPosition],get_stack())
 	queue_free()
+
+# Saves this entity
+func save_entity() -> bool:
+	return SaveManager.add_Entity_to_TileData(MapPosition, self)
 	
 ### ----------------------------------------------------
 # Utils

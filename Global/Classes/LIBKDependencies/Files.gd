@@ -49,7 +49,7 @@ static func create_empty_file(path:String) -> int:
 static func delete_file(path:String) -> int:
 	return Directory.new().remove(path)
 
-# Returns [ [filepath, filename], ... ], empty array on failure
+# Returns [[filepath, filename], ...], empty array on failure
 static func get_file_list_at_dir(path:String) -> Array:
 	var dir := Directory.new()
 	var fileList := []

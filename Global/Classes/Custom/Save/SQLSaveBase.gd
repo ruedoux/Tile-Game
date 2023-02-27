@@ -11,6 +11,7 @@ extends Reference
 const SQLite := preload("res://addons/godot-sqlite/bin/gdsqlite.gdns")
 const SQLCOMPRESSION = 2  # Compression mode, https://docs.godotengine.org/en/stable/classes/class_file.html#enum-file-compressionmode
 
+const TEMP_MARKER = "_TEMP" # Added to ending of all temp files
 var SQL_DB_GLOBAL:SQLite  # SQLite object assigned to SaveManager
 var DEST_PATH:String      # The main save file path
 var TEMP_PATH:String	  # Temp save file path
@@ -42,8 +43,8 @@ func _init(fileName:String, fileDir:String, verbose = false) -> void:
 	beVerbose = verbose
 	FILE_DIR = fileDir
 	FILE_NAME = fileName
-	DEST_PATH = FILE_DIR + FILE_NAME +".db"
-	TEMP_PATH = FILE_DIR + FILE_NAME +"_TEMP.db"
+	DEST_PATH = FILE_DIR + FILE_NAME + ".db"
+	TEMP_PATH = FILE_DIR + FILE_NAME + TEMP_MARKER + ".db"
 
 	SQL_DB_GLOBAL = SQLite.new()
 	SQL_DB_GLOBAL.path = TEMP_PATH
@@ -70,7 +71,7 @@ func fill_GAMEDATA_TABLE(TileMaps:Array) -> void:
 		TemplatePlayer.to_string(),
 		TABLE_NAMES.keys()[TABLE_NAMES.GAMEDATA_TABLE],
 		GAMEDATA_KEYS.keys()[GAMEDATA_KEYS.PLAYER_DATA])
-	TemplatePlayer.queue_free()
+	TemplatePlayer.free()
 
 # Compresses and saves data in sqlite db
 # Designed to compress big data chunks
@@ -112,6 +113,11 @@ func create_new_save(TileMaps:Array) -> bool:
 	if(not isOK): Logger.logErr(["Failed to create tables: ", DEST_PATH], get_stack())
 	elif(isOK):   Logger.logMS(["Created DataBase at: ", DEST_PATH])
 	return isOK
+
+# Always call this when changing saves, deletes temp files
+func close_save() -> bool:
+	SQL_DB_GLOBAL = null
+	return (LibK.Files.delete_file(TEMP_PATH) == OK)
 
 ### ----------------------------------------------------
 # Queries, these are not meant to be used where speed matters (open and close db in every function which is slow)

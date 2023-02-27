@@ -30,6 +30,8 @@ func _load_map(MapName:String, TileMaps:Array) -> bool:
 		return false
 	
 	var isOK := true
+	if (_CurrentMap != null): _CurrentMap.close_save()
+	
 	_CurrentMap = SQLSave.new(MapName, MAP_FOLDER)
 	isOK = _CurrentMap.initialize() and isOK
 	isOK = _CurrentMap.check_compatible(TileMaps) and isOK
@@ -43,6 +45,8 @@ func load_sav(SaveName:String, MapName:String, TileMaps:Array) -> bool:
 	if(not LibK.Files.file_exist(savPath)):
 		Logger.logErr(["Save doesnt exist: ", savPath], get_stack())
 		return false
+	
+	if (_CurrentSav != null): _CurrentSav.close_save()
 	
 	_CurrentSav = SQLSave.new(SaveName, SAV_FOLDER)
 	isOK = _CurrentSav.initialize() and isOK
@@ -65,6 +69,22 @@ func delete_sav(SaveName:String = "") -> int:
 
 func delete_db(dbName:String, folderPath:String) -> int:
 	return LibK.Files.delete_file(folderPath + dbName + ".db")
+
+# Cleans all temp files from save folder (Dont call when save is used!)
+func clean_TEMP() -> bool:
+	var isOK := true
+	for packed in LibK.Files.get_file_list_at_dir(MAP_FOLDER):
+		var filepath:String = packed[0]
+		var fileName:String = packed[1]
+		if SQLSave.TEMP_MARKER in fileName:
+			isOK = isOK and (LibK.Files.delete_file(filepath) == OK)
+	
+	for packed in LibK.Files.get_file_list_at_dir(SAV_FOLDER):
+		var filepath:String = packed[0]
+		var fileName:String = packed[1]
+		if SQLSave.TEMP_MARKER in fileName:
+			isOK = isOK and (LibK.Files.delete_file(filepath) == OK)
+	return isOK
 
 ### ----------------------------------------------------
 ### Set / get / Remove
@@ -111,3 +131,6 @@ func get_TileData_on_chunk(chunkPosV3:Vector3, chunkSize:int) -> Dictionary:
 
 func get_PlayerEntity() -> PlayerEntity:
 	return _CurrentSav.get_PlayerEntity()
+
+func set_PlayerEntity(Player:PlayerEntity) -> bool:
+	return _CurrentSav.set_PlayerEntity(Player)

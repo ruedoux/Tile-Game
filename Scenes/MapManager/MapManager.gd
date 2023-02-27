@@ -33,6 +33,7 @@ func start_simulation(SaveName:String, MapName:String) -> bool:
 	var Player := SaveManager.get_PlayerEntity()
 	$EntityManager.load_player(Player)
 	GameFocusEntity = Player
+	SimulatedEntities.append(Player)
 
 	update_simulation()
 	return true
@@ -58,10 +59,12 @@ func update_map(ChunksToLoad:Array, ChunksToRender:Array) -> void:
 	for chunkV3 in ChunksToLoad:
 		if LoadedChunks.has(chunkV3): continue
 		var DataDict := SaveManager.get_TileData_on_chunk(chunkV3, DATA.TILEMAPS.CHUNK_SIZE)
-		
+		#if chunkV3 == Vector3(0,0,0): print(DataDict)
 		# If chunks in range of focus object load them to TileMaps
 		if(ChunksToRender.has(chunkV3)):
 			$TileMapManager.load_chunk_to_tilemap(chunkV3, DataDict)
+		$EntityManager.load_entities_on_chunk(chunkV3, DataDict)
+
 		LoadedChunks.append(chunkV3)
 	
 	# Unload old chunks that are not in range (iterate backwards)
@@ -72,6 +75,8 @@ func update_map(ChunksToLoad:Array, ChunksToRender:Array) -> void:
 		# If chunks in range of focus object unload them from TileMaps
 		if(ChunksToRender.has(chunkV3)):
 			$TileMapManager.unload_chunk_from_tilemap(chunkV3)
+		$EntityManager.unload_entities_on_chunk(chunkV3)
+
 		LoadedChunks.remove(i)
 	
 	$TileMapManager.update_all_TM_bitmask()

@@ -12,3 +12,7 @@ class_name PlayerEntity
 ### ----------------------------------------------------
 # FUNCTIONS
 ### ----------------------------------------------------
+
+# Saves this entity
+func save_entity() -> bool:
+	return SaveManager.set_PlayerEntity(self)

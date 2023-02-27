@@ -105,13 +105,15 @@ func save_to_sqlDB(savePath:String = "") -> bool:
 	
 	for chunkV3 in SQLLoadedChunks.keys():
 		_unload_SQLChunk(chunkV3)
-	do_query("VACUUM;") # Vacuum save to reduce its size
-
+	
 	var result := LibK.Files.copy_file(TEMP_PATH, savePath)
 	if(not result == OK):
 		Logger.logErr(["Failed to copy db from temp to save: ", TEMP_PATH, " -> ", savePath, ", result: ", result], get_stack())
 		return false
 	
+	SQL_DB_GLOBAL.path = savePath
+	do_query("VACUUM;") # Vacuum save to reduce its size
+	SQL_DB_GLOBAL.path = TEMP_PATH
 	Logger.logMS(["Saved SQLSave: ", savePath])
 	return true
 
@@ -128,11 +130,12 @@ func get_PlayerEntity() -> PlayerEntity:
 	return PlayerEntity.new().from_str(PlayerEntityStr)
 
 # Saves Player Entity
-func set_PlayerEntity(Player:PlayerEntity) -> void:
+func set_PlayerEntity(Player:PlayerEntity) -> bool:
 	sql_save_compressed(
 		Player.to_string(),
 		TABLE_NAMES.keys()[TABLE_NAMES.GAMEDATA_TABLE],
 		GAMEDATA_KEYS.keys()[GAMEDATA_KEYS.PLAYER_DATA])
+	return true
 
 ### ----------------------------------------------------
 # MapData control
