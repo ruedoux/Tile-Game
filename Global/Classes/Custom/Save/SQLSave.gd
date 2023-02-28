@@ -96,7 +96,7 @@ func check_compatible(TileMaps:Array) -> bool:
 	return isOK
 
 # Save everything, leave savePath empty if you want to overwrite save
-func save_to_sqlDB(savePath:String = "") -> bool:
+func save(savePath:String = "") -> bool:
 	if(savePath == ""): savePath = DEST_PATH
 	if(LibK.Files.file_exist(savePath)):
 		if(OS.move_to_trash(ProjectSettings.globalize_path(savePath)) != OK):
@@ -115,6 +115,16 @@ func save_to_sqlDB(savePath:String = "") -> bool:
 	do_query("VACUUM;") # Vacuum save to reduce its size
 	SQL_DB_GLOBAL.path = TEMP_PATH
 	Logger.logMS(["Saved SQLSave: ", savePath])
+	return true
+
+# Calls save() and then close()
+func save_and_close(savePath:String = "") -> bool:
+	if(not save(savePath)):
+		Logger.logErr(["Failed to save DB on close: ", savePath], get_stack())
+		return false
+	if(not close()):
+		Logger.logErr(["Failed to delete temp file on close: ", TEMP_PATH], get_stack())
+		return false
 	return true
 
 ### ----------------------------------------------------

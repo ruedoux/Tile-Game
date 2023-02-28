@@ -115,9 +115,13 @@ func create_new_save(TileMaps:Array) -> bool:
 	return isOK
 
 # Always call this when changing saves, deletes temp files
-func close_save() -> bool:
+func close() -> bool:
 	SQL_DB_GLOBAL = null
 	return (LibK.Files.delete_file(TEMP_PATH) == OK)
+
+# Deletes an sql DB save
+static func delete_SQLDB_file(folderPath:String ,dbName:String) -> int:
+	return LibK.Files.delete_file(folderPath + dbName + ".db")
 
 ### ----------------------------------------------------
 # Queries, these are not meant to be used where speed matters (open and close db in every function which is slow)

@@ -70,7 +70,7 @@ func test_SQLSave():
 	get_regular(sqlsave, TestPosV3, SavedData)
 	get_bulk(sqlsave, TestChunks, SavedData)
 	
-	assert_true(sqlsave.save_to_sqlDB(), "Failed to save")
+	assert_true(sqlsave.save(), "Failed to save")
 	assert_true(sqlsave.MapData.size() == 0, "MapData should be empty! Size: " + str(sqlsave.MapData.size()))
 	sqlsave = null
 	
@@ -86,5 +86,5 @@ func test_SQLSave():
 		assert_true(str(SavedData[posV3]) == str(GetTD), "Get TileData (load) content does not match: "+str(SavedData[posV3])+"=!"+str(GetTD)+", Pos:"+str(posV3))
 	LOG_GUT(["Get load time (msec): ", LGetTimer.get_result()])
 
-	assert_true(sqlload.save_to_sqlDB(), "Failed to save loaded")
-	assert_true(LibK.Files.delete_file(sqlload.SQL_DB_GLOBAL.path) == OK, "Failed to delete save")
+	assert_true(sqlload.save_and_close(), "Failed to save loaded")
+	assert_true(SQLSave.delete_SQLDB_file(SAV_FOLDER, SAV_NAME) == OK, "Failed to delete save")

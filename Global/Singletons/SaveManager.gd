@@ -30,7 +30,7 @@ func _load_map(MapName:String, TileMaps:Array) -> bool:
 		return false
 	
 	var isOK := true
-	if (_CurrentMap != null): _CurrentMap.close_save()
+	if (_CurrentMap != null): _CurrentMap.close()
 	
 	_CurrentMap = SQLSave.new(MapName, MAP_FOLDER)
 	isOK = _CurrentMap.initialize() and isOK
@@ -46,32 +46,24 @@ func load_sav(SaveName:String, MapName:String, TileMaps:Array) -> bool:
 		Logger.logErr(["Save doesnt exist: ", savPath], get_stack())
 		return false
 	
-	if (_CurrentSav != null): _CurrentSav.close_save()
+	if (_CurrentSav != null): _CurrentSav.close()
 	
 	_CurrentSav = SQLSave.new(SaveName, SAV_FOLDER)
 	isOK = _CurrentSav.initialize() and isOK
 	isOK = _CurrentSav.check_compatible(TileMaps) and isOK
 	return isOK
 
-# Leave saveName empty if you want to overwrite save
 func save_sav(SaveName:String) -> bool:
-	return _CurrentSav.save_to_sqlDB(SAV_FOLDER + SaveName + ".db")
-
-# Leave MapName empty if you want to overwrite map
+	return _CurrentSav.save(SAV_FOLDER + SaveName + ".db")
 func _save_map(MapName:String = "") -> bool:
-	return _CurrentMap.save_to_sqlDB(MAP_FOLDER + MapName + ".db")
-
+	return _CurrentMap.save(MAP_FOLDER + MapName + ".db")
 func _delete_map(MapName:String = "") -> int:
-	return LibK.Files.delete_file(MAP_FOLDER + MapName + ".db")
-
+	return SQLSave.delete_SQLDB_file(MAP_FOLDER, MapName)
 func delete_sav(SaveName:String = "") -> int:
-	return LibK.Files.delete_file(SAV_FOLDER + SaveName + ".db")
+	return SQLSave.delete_SQLDB_file(SAV_FOLDER, SaveName)
 
-func delete_db(dbName:String, folderPath:String) -> int:
-	return LibK.Files.delete_file(folderPath + dbName + ".db")
-
-# Cleans all temp files from save folder (Dont call when save is used!)
-func clean_TEMP() -> bool:
+# Cleans all temp files from save folders (Dont call when a save is used!)
+static func clean_TEMP() -> bool:
 	var isOK := true
 	for packed in LibK.Files.get_file_list_at_dir(MAP_FOLDER):
 		var filepath:String = packed[0]
@@ -85,6 +77,7 @@ func clean_TEMP() -> bool:
 		if SQLSave.TEMP_MARKER in fileName:
 			isOK = isOK and (LibK.Files.delete_file(filepath) == OK)
 	return isOK
+
 
 ### ----------------------------------------------------
 ### Set / get / Remove
