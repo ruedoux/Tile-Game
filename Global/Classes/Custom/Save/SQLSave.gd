@@ -37,13 +37,22 @@ var TS_CONTROL := Dictionary() # { TSName:{tileID:tileName} }
 # FUNCTIONS
 ### ----------------------------------------------------
 
-func _init(fileName:String, fileDir:String, verbose = false).(fileName, fileDir, verbose) -> void:
-	#Logger.logMS(["Created new SQLSave Object: ", FILE_DIR, " ", FILE_NAME])
-	pass
+func _init(fileName:String, fileDir:String, TileMaps:Array, makeNew:bool = false, verbose = false) -> void:
+	_setupDB(fileName, fileDir, verbose)
 
+	if(makeNew): if(not _create_new_save(TileMaps)): return
+	if(not LibK.Files.file_exist(DEST_PATH)):
+		Logger.logErr(["Tried to init non existing save: ", DEST_PATH], get_stack())
+		return
+	if(not _initialize()): return
+	if(not _check_compatible(TileMaps)): return
+
+	isReadyNoErr = true
+	Logger.logMS(["Loaded SQLSave: ", DEST_PATH])
+	
 # Should be called after init before trying to acess data from save
 # Loads all metadata to cache variables, copies save to temp
-func initialize() -> bool:
+func _initialize() -> bool:
 	if(not LibK.Files.file_exist(DEST_PATH)):
 		Logger.logErr(["Unable to initialize save, file doesnt exist: ", DEST_PATH], get_stack())
 		return false
@@ -68,7 +77,7 @@ func initialize() -> bool:
 	return true
 
 # Check if the current tilemaps are compatible with TS_CONTROL tilemaps
-func check_compatible(TileMaps:Array) -> bool:
+func _check_compatible(TileMaps:Array) -> bool:
 	var isOK := true
 	for tileMap in TileMaps:
 		var TSName:String = tileMap.get_name()
@@ -115,16 +124,6 @@ func save(savePath:String = "") -> bool:
 	do_query("VACUUM;") # Vacuum save to reduce its size
 	SQL_DB_GLOBAL.path = TEMP_PATH
 	Logger.logMS(["Saved SQLSave: ", savePath])
-	return true
-
-# Calls save() and then close()
-func save_and_close(savePath:String = "") -> bool:
-	if(not save(savePath)):
-		Logger.logErr(["Failed to save DB on close: ", savePath], get_stack())
-		return false
-	if(not close()):
-		Logger.logErr(["Failed to delete temp file on close: ", TEMP_PATH], get_stack())
-		return false
 	return true
 
 ### ----------------------------------------------------
@@ -219,9 +218,7 @@ func get_TileData_on_chunk(chunkPosV3:Vector3, chunkSize:int) -> Dictionary:
 	var resultDict := {}
 	_update_SQLLoadedChunks(LibK.Vectors.scale_down_vec3(chunkPosV3, MAPDATA_CHUNK_SIZE/chunkSize))
 	for posV3 in LibK.Vectors.vec3_get_pos_in_chunk(chunkPosV3,chunkSize):
-		if(not MapData.has(posV3)): 
-			resultDict[posV3] = TileData.new()
-			continue
+		if(not MapData.has(posV3)): continue
 		resultDict[posV3] = TileData.new().from_str(MapData[posV3])
 	return resultDict
 

@@ -13,13 +13,8 @@ func _ready() -> void:
 	VisualServer.set_default_clear_color(Color.darkslateblue)
 	TileSelect.allTileMaps = $TileMapManager.get_tilemaps()
 	
-	if(not SaveManager._create_empty_save("MapEditorDefault", SaveManager.MAP_FOLDER, TileSelect.allTileMaps)):
-		push_error("Failed to init MapEditor")
-		get_tree().quit()
-	if(not SaveManager._create_empty_save("MapEditorDefault", SaveManager.SAV_FOLDER, TileSelect.allTileMaps)):
-		push_error("Failed to init MapEditor")
-		get_tree().quit()
-	if(not SaveManager.load_sav("MapEditorDefault", "MapEditorDefault", TileSelect.allTileMaps)):
+	EditedMap = SQLSave.new(EDITOR_SAVE_NAME, SaveManager.MAP_FOLDER, TileSelect.allTileMaps, true)
+	if(not EditedMap.isReadyNoErr):
 		push_error("Failed to init MapEditor")
 		get_tree().quit()
 	

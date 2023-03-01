@@ -19,6 +19,9 @@ var FILE_NAME:String	  # Name of the database file
 var FILE_DIR:String       # Database file dir
 var beVerbose:bool        # For debug purposes
 
+# Flag, is false if save is not properly initialized
+var isReadyNoErr := false
+
 const MAPDATA_CHUNK_SIZE = 64 # Size of SQLite data chunk
 const SQL_CT_UNLOAD_NUM = 128 # Unload chunk if data wasnt requested for 128 updates (max loaded chunks number)
 
@@ -38,8 +41,7 @@ const TABLE_CONTENT = {
 # FUNCTIONS
 ### ----------------------------------------------------
 
-# Class requires instancing for convinience and performance
-func _init(fileName:String, fileDir:String, verbose = false) -> void:
+func _setupDB(fileName:String, fileDir:String, verbose = false):
 	beVerbose = verbose
 	FILE_DIR = fileDir
 	FILE_NAME = fileName
@@ -49,6 +51,10 @@ func _init(fileName:String, fileDir:String, verbose = false) -> void:
 	SQL_DB_GLOBAL = SQLite.new()
 	SQL_DB_GLOBAL.path = TEMP_PATH
 	SQL_DB_GLOBAL.verbosity_level = 0
+
+# Deletes TEMP file
+func close() -> bool:
+	return (LibK.Files.delete_file(TEMP_PATH) != OK)
 
 func fill_GAMEDATA_TABLE(TileMaps:Array) -> void:
 	var TSControlTemp := Dictionary()
@@ -91,7 +97,7 @@ func sql_load_compressed(tableName:String, KeyVar) -> String:
 	return LibK.Compression.decompress_str(queryResult[0]["CData"], SQLCOMPRESSION, queryResult[0]["DCSize"])
 
 # If save already exists, create a new one and put old one in the trash
-func create_new_save(TileMaps:Array) -> bool:
+func _create_new_save(TileMaps:Array) -> bool:
 	if(LibK.Files.file_exist(DEST_PATH)):
 		if(OS.move_to_trash(ProjectSettings.globalize_path(DEST_PATH)) != OK):
 			Logger.logErr(["Unable to delete save file: ", DEST_PATH], get_stack())
@@ -114,14 +120,19 @@ func create_new_save(TileMaps:Array) -> bool:
 	elif(isOK):   Logger.logMS(["Created DataBase at: ", DEST_PATH])
 	return isOK
 
-# Always call this when changing saves, deletes temp files
-func close() -> bool:
-	SQL_DB_GLOBAL = null
-	return (LibK.Files.delete_file(TEMP_PATH) == OK)
-
-# Deletes an sql DB save
+# Deletes an sql DB
 static func delete_SQLDB_file(folderPath:String ,dbName:String) -> int:
 	return LibK.Files.delete_file(folderPath + dbName + ".db")
+
+# Cleans all temp files from save folders (Dont call when a save is used!)
+static func clean_TEMP(folderPath:String) -> bool:
+	var isOK := true
+	for packed in LibK.Files.get_file_list_at_dir(folderPath):
+		var filepath:String = packed[0]
+		var fileName:String = packed[1]
+		if TEMP_MARKER in fileName:
+			isOK = isOK and (LibK.Files.delete_file(filepath) == OK)
+	return isOK
 
 ### ----------------------------------------------------
 # Queries, these are not meant to be used where speed matters (open and close db in every function which is slow)

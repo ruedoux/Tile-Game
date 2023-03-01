@@ -18,69 +18,53 @@ var _CurrentSav:SQLSave = null
 ### FUNCTIONS
 ### ----------------------------------------------------
 
+# Destructor, cleans TEMP files on game close
+func _notification(what:int) -> void:
+	if(what == NOTIFICATION_PREDELETE):
+		clean_TEMP()
 
-func _create_empty_save(MapName:String, folderPath:String, TileMaps:Array) -> bool:
-	var sqlsave := SQLSave.new(MapName, folderPath)
-	return sqlsave.create_new_save(TileMaps)
+# Creates an empty save in a given destionation
+func create_empty_save(MapName:String, folderPath:String, TileMaps:Array) -> bool:
+	var sqlsave := SQLSave.new(MapName, folderPath, TileMaps, true)
+	return sqlsave.isReadyNoErr
 
+# Loads a given map
 func _load_map(MapName:String, TileMaps:Array) -> bool:
-	var mapPath := MAP_FOLDER + MapName + ".db"
-	if(not LibK.Files.file_exist(mapPath)):
-		Logger.logErr(["Map doesnt exist: ", mapPath], get_stack())
+	var Temp := SQLSave.new(MapName, MAP_FOLDER, TileMaps)
+	if(not Temp.isReadyNoErr):
 		return false
-	
-	var isOK := true
-	if (_CurrentMap != null): _CurrentMap.close()
-	
-	_CurrentMap = SQLSave.new(MapName, MAP_FOLDER)
-	isOK = _CurrentMap.initialize() and isOK
-	isOK = _CurrentMap.check_compatible(TileMaps) and isOK
-	return isOK
+	_CurrentMap = Temp
+	return true
 
+# Loads a given map with corresponding save
 func load_sav(SaveName:String, MapName:String, TileMaps:Array) -> bool:
-	var isOK := _load_map(MapName, TileMaps)
-	var savPath := SAV_FOLDER + SaveName + ".db"
-	
-	if(not isOK): return isOK
-	if(not LibK.Files.file_exist(savPath)):
-		Logger.logErr(["Save doesnt exist: ", savPath], get_stack())
+	if(not _load_map(MapName, TileMaps)):
 		return false
 	
-	if (_CurrentSav != null): _CurrentSav.close()
-	
-	_CurrentSav = SQLSave.new(SaveName, SAV_FOLDER)
-	isOK = _CurrentSav.initialize() and isOK
-	isOK = _CurrentSav.check_compatible(TileMaps) and isOK
-	return isOK
+	var Temp := SQLSave.new(SaveName, SAV_FOLDER, TileMaps)
+	if(not Temp.isReadyNoErr):
+		return false
+	_CurrentSav = Temp
+	return true
 
 func save_sav(SaveName:String) -> bool:
 	return _CurrentSav.save(SAV_FOLDER + SaveName + ".db")
-func _save_map(MapName:String = "") -> bool:
+func _save_map(MapName:String) -> bool:
 	return _CurrentMap.save(MAP_FOLDER + MapName + ".db")
 func _delete_map(MapName:String = "") -> int:
 	return SQLSave.delete_SQLDB_file(MAP_FOLDER, MapName)
 func delete_sav(SaveName:String = "") -> int:
 	return SQLSave.delete_SQLDB_file(SAV_FOLDER, SaveName)
 
-# Cleans all temp files from save folders (Dont call when a save is used!)
-static func clean_TEMP() -> bool:
+# Temp file clean wrapper, cleans all TEMP files created by SaveManager
+func clean_TEMP() -> bool:
 	var isOK := true
-	for packed in LibK.Files.get_file_list_at_dir(MAP_FOLDER):
-		var filepath:String = packed[0]
-		var fileName:String = packed[1]
-		if SQLSave.TEMP_MARKER in fileName:
-			isOK = isOK and (LibK.Files.delete_file(filepath) == OK)
-	
-	for packed in LibK.Files.get_file_list_at_dir(SAV_FOLDER):
-		var filepath:String = packed[0]
-		var fileName:String = packed[1]
-		if SQLSave.TEMP_MARKER in fileName:
-			isOK = isOK and (LibK.Files.delete_file(filepath) == OK)
+	isOK = isOK and SQLSave.clean_TEMP(MAP_FOLDER)
+	isOK = isOK and SQLSave.clean_TEMP(SAV_FOLDER)
 	return isOK
 
-
 ### ----------------------------------------------------
-### Set / get / Remove
+### Set / get / Remove API
 ### ----------------------------------------------------
 
 

@@ -29,23 +29,6 @@ func _enter_tree() -> void:
 		add_child(TMInstance)
 	TileMaps = get_tilemaps()
 
-# Allows to directly update TileMaps
-# Only used in MapEditor! (It requests data from save so its slower with MapManager)
-func _update_visable_map(ChunksToLoad:Array) -> void:
-	# Loading chunks that are not yet rendered
-	for chunkV3 in ChunksToLoad:
-		if RenderedChunks.has(chunkV3): continue
-		load_chunk_to_tilemap(chunkV3, SaveManager.get_TileData_on_chunk(chunkV3, DATA.TILEMAPS.CHUNK_SIZE))
-	
-	# Unload old chunks that are not in range (iterate backwards)
-	for i in range(RenderedChunks.size() - 1, -1, -1):
-		var chunkV3:Vector3 = RenderedChunks[i]
-		if ChunksToLoad.has(chunkV3): continue
-		RenderedChunks.remove(i)
-		unload_chunk_from_tilemap(chunkV3)
-	
-	for tileMap in TileMaps: tileMap.update_bitmask_region()
-
 # Updates bitmask of all TileMaps
 func update_all_TM_bitmask() -> void:
 	for tileMap in TileMaps: tileMap.update_bitmask_region()
@@ -58,9 +41,10 @@ func load_chunk_to_tilemap(chunkV3:Vector3, DataDict:Dictionary) -> void:
 		for posV3 in DataDict:
 			tileMap.set_cellv(LibK.Vectors.vec3_vec2(posV3), DataDict[posV3].get_from_IDDict(TMName))
 	RenderedChunks.append(chunkV3)
+	update_all_TM_bitmask()
 	
 # Loads tiles from every TileMap on position, return false if tile not in loaded chunks
-func refresh_tile_on(posV3:Vector3) -> bool:
+func refresh_tile_on(posV3:Vector3, tileData:TileData) -> bool:
 	var chunkV3:Vector3 = LibK.Vectors.scale_down_vec3(posV3, DATA.TILEMAPS.CHUNK_SIZE)
 	if(not RenderedChunks.has(chunkV3)):
 		Logger.logErr(["Tried to refresh tile on unloaded chunk: ", chunkV3, ", pos: ", posV3], get_stack())
@@ -70,7 +54,9 @@ func refresh_tile_on(posV3:Vector3) -> bool:
 		var TMName = tileMap.get_name()
 		tileMap.set_cellv(
 			LibK.Vectors.vec3_vec2(posV3),
-			SaveManager.get_TileData_on(posV3).get_from_IDDict(TMName))
+			tileData.get_from_IDDict(TMName))
+
+	update_all_TM_bitmask()
 	return true
 
 # Unloads a single chunk from TileMaps
@@ -79,11 +65,13 @@ func unload_chunk_from_tilemap(chunkV3:Vector3) -> void:
 		for tileMap in TileMaps:
 			tileMap.set_cellv(LibK.Vectors.vec3_vec2(posV3), -1)
 	RenderedChunks.erase(chunkV3)
+	update_all_TM_bitmask()
 
 func unload_all_chunks() -> void:
 	# Iterate backwards to safely erase entries
 	for i in range(RenderedChunks.size() - 1, -1, -1):
 		unload_chunk_from_tilemap(RenderedChunks[i])
+	update_all_TM_bitmask()
 
 # Returns all TileMaps that are children of this node
 func get_tilemaps() -> Array:

@@ -23,7 +23,6 @@ func after_all():
 	MapManager.queue_free()
 
 func before_each():
-	print($MapManager/TileMapManager)
 	var TileMaps:Array = $MapManager/TileMapManager.TileMaps
 	if(not SaveManager._create_empty_save(SAVE_NAME, SaveManager.MAP_FOLDER, TileMaps)):
 		push_error("Failed to init unit test")
@@ -49,7 +48,7 @@ func test_EntityManager():
 	for i in range(1,ENUM):
 		var entity := GameEntity.new()
 		assert_true(SaveManager.add_Entity_to_TileData(Vector3(i+1,0,0), entity))
-		entity.queue_free()
+		entity.free()
 	
 	MapManager.update_simulation()
 	

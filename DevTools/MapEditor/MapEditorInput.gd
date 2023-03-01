@@ -51,6 +51,9 @@ onready var UIElement = {
 var inputActive:bool = true
 var UIZone:bool = false
 
+const EDITOR_SAVE_NAME = "EDITOR"
+var EditedMap:SQLSave
+
 ### ----------------------------------------------------
 # FUNCTIONS
 ### ----------------------------------------------------
@@ -72,7 +75,7 @@ func _input(event: InputEvent) -> void:
 	if UIZone: return
 	
 	update()
-	update_MapManager_chunks()
+	update_EditedMap_chunks()
 	set_tile_input(event)
 
 func _flag_control(stateName:String) -> bool:
@@ -170,11 +173,11 @@ func set_selected_tile(tileID:int):
 	var TMName = tileMap.get_name()
 	
 	if tileID == -1:
-		SaveManager._CurrentMap.remove_tile_from_TileData(TMName,posV3)
+		EditedMap.remove_tile_from_TileData(TMName,posV3)
 	else:
-		if(not SaveManager._CurrentMap.add_tile_to_TileData_on(posV3, TMName, tileID)):
+		if(not EditedMap.add_tile_to_TileData_on(posV3, TMName, tileID)):
 			Logger.logErr(["Failed to set tile: ", [posV3, TMName, tileID]], get_stack())
-	$TileMapManager.refresh_tile_on(posV3)
+	$TileMapManager.refresh_tile_on(posV3, EditedMap.get_TileData_on(posV3))
 
 ### ----------------------------------------------------
 # Filter Items
@@ -202,7 +205,7 @@ func _on_Filter_text_entered(new_text: String) -> void:
 
 
 # Renders chunks as in normal game based on camera position (as simulated entity)
-func update_MapManager_chunks():
+func update_EditedMap_chunks():
 	var camChunk:Vector2 = LibK.Vectors.scale_down_vec2($Cam.global_position, DATA.TILEMAPS.CHUNK_SIZE*DATA.TILEMAPS.BASE_SCALE)
 	var chunksToRender:Array = []
 	var posToRender:Array = LibK.Vectors.vec2_get_square(camChunk, 1)
@@ -210,7 +213,20 @@ func update_MapManager_chunks():
 	for pos in posToRender:
 		chunksToRender.append(LibK.Vectors.vec2_vec3(pos,$Cam.currentElevation))
 	
-	$TileMapManager._update_visable_map(chunksToRender)
+	# Loading chunks that are not yet rendered
+	for chunkV3 in chunksToRender:
+		if $TileMapManager.RenderedChunks.has(chunkV3): continue
+		$TileMapManager.load_chunk_to_tilemap(chunkV3, 
+			EditedMap.get_TileData_on_chunk(chunkV3, DATA.TILEMAPS.CHUNK_SIZE))
+	
+	# Unload old chunks that are not meant to be seen
+	for i in range($TileMapManager.RenderedChunks.size() - 1, -1, -1):
+		var chunkV3:Vector3 = $TileMapManager.RenderedChunks[i]
+		if chunksToRender.has(chunkV3): continue
+		$TileMapManager.RenderedChunks.remove(i)
+		$TileMapManager.unload_chunk_from_tilemap(chunkV3)
+	
+	$TileMapManager.update_all_TM_bitmask()
 
 ### ----------------------------------------------------
 # Save / Load
@@ -236,15 +252,18 @@ func _load_input(event:InputEvent) -> void:
 		_hide_lineEdit("isLoading", UIElement.LoadEdit)
 
 func _on_SaveEdit_text_entered(mapName:String) -> void:
-	if (not SaveManager._save_map(mapName)):
+	if (not EditedMap.save(SaveManager.MAP_FOLDER + mapName + ".db")):
 		Logger.logErr(["Failed to save: ", mapName], get_stack())
 	_hide_lineEdit("isSaving", UIElement.SaveEdit)
 
-func _on_LoadEdit_text_entered(mapName: String) -> void:
-	if (not SaveManager._load_map(mapName, TileSelect.allTileMaps)):
-		Logger.logErr(["Failed to load: ", mapName], get_stack())
+func _on_LoadEdit_text_entered(MapName: String) -> void:
+	var Temp := SQLSave.new(MapName, SaveManager.MAP_FOLDER, TileSelect.allTileMaps)
+	if(Temp.isReadyNoErr):
+		EditedMap = Temp
+	else:
+		Logger.logErr(["Failed to load: ", MapName], get_stack())
 	
-	update_MapManager_chunks()
+	update_EditedMap_chunks()
 	$TileMapManager.unload_all_chunks()
 	_hide_lineEdit("isLoading", UIElement.LoadEdit)
 

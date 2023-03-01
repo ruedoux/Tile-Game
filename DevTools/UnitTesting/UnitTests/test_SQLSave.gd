@@ -10,7 +10,7 @@ extends GutTestLOG
 const _TMM = preload("res://Scenes/MapManager/TileMapManager/TileMapManager.tscn")
 var TileMapManager:Node = null
 
-const SAV_FOLDER := "res://Temp"
+const SAV_FOLDER := "res://Temp/"
 const SAV_NAME := "UnitTest"
 
 ### ----------------------------------------------------
@@ -36,11 +36,9 @@ func get_bulk(sqlsave:SQLSave, TestChunks:Array, SavedData:Dictionary) -> void:
 			assert_true(str(SavedData[posV3]) == str(ChunkData[posV3]), "Get TileData (create) content does not match: "+str(SavedData[posV3])+"=!"+str(ChunkData[posV3])+", Pos:"+str(posV3))
 	LOG_GUT(["Get time (msec) (bulk): ", GetTimer.get_result()])
 
-func test_SQLSave():
-	var sqlsave := SQLSave.new(SAV_NAME, SAV_FOLDER)
-	assert_true(sqlsave.create_new_save(TileMapManager.TileMaps), "Failed to create new save")
-	assert_true(sqlsave.initialize(), "Failed to initialize SQLSave")
-	assert_true(sqlsave.check_compatible(TileMapManager.TileMaps), "Tilemaps are not compatible")
+func test_SQLSave_TileData():
+	var sqlsave := SQLSave.new(SAV_NAME, SAV_FOLDER, TileMapManager.TileMaps, true)
+	assert_true(sqlsave.isReadyNoErr, "Failed to init save")
 
 	var RTileMap:TileMap = TileMapManager.TileMaps[randi()%TileMapManager.TileMaps.size()]
 	var RTileMapName:String = RTileMap.get_name()
@@ -75,9 +73,8 @@ func test_SQLSave():
 	sqlsave = null
 	
 	# Simulate trying to access data after save
-	var sqlload := SQLSave.new(SAV_NAME, SAV_FOLDER)
-	assert_true(sqlload.initialize(), "Failed to initialize SQLSave")
-	assert_true(sqlload.check_compatible(TileMapManager.TileMaps), "Tilemaps are not compatible")
+	var sqlload := SQLSave.new(SAV_NAME, SAV_FOLDER, TileMapManager.TileMaps)
+	assert_true(sqlload.isReadyNoErr, "Failed to initialize SQLSave on load")
 	
 	# Get tiles from save
 	var LGetTimer = STimer.new(Time.get_ticks_msec())
@@ -85,6 +82,26 @@ func test_SQLSave():
 		var GetTD := sqlload.get_TileData_on(posV3)
 		assert_true(str(SavedData[posV3]) == str(GetTD), "Get TileData (load) content does not match: "+str(SavedData[posV3])+"=!"+str(GetTD)+", Pos:"+str(posV3))
 	LOG_GUT(["Get load time (msec): ", LGetTimer.get_result()])
+	
+	assert_true(SQLSave.delete_SQLDB_file(SAV_FOLDER, SAV_NAME) == OK, "Failed to delete save")
 
-	assert_true(sqlload.save_and_close(), "Failed to save loaded")
+func test_SQLSave_Entity():
+	var sqlsave := SQLSave.new(SAV_NAME, SAV_FOLDER, TileMapManager.TileMaps, true)
+	assert_true(sqlsave.isReadyNoErr, "Failed to init save")
+
+	LOG_GUT(["Entity save test: "])
+	var ENUM = 10 # Make sure to be in range of render
+	var EntitySaved := {}
+	for i in range(1,ENUM):
+		var entity := GameEntity.new()
+		var posV3 := Vector3(i+1,0,0)
+		assert_true(sqlsave.add_Entity_to_TileData(posV3, entity))
+		EntitySaved[posV3] = str(entity)
+		entity.free()
+	
+	LOG_GUT(["Entity saved data test: "])
+	for posV3 in EntitySaved:
+		assert_true(EntitySaved[posV3] == sqlsave.get_TileData_on(posV3).EntityData, 
+			str(EntitySaved[posV3]) + "=!" + str(sqlsave.get_TileData_on(posV3).EntityData))
+
 	assert_true(SQLSave.delete_SQLDB_file(SAV_FOLDER, SAV_NAME) == OK, "Failed to delete save")
