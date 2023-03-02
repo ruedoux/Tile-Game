@@ -40,31 +40,32 @@ func start_simulation(SaveName:String, MapName:String) -> bool:
 
 # Ran every single tick
 func update_simulation() -> void:
-	update_map(get_chunks_to_load(),
-		LibK.Vectors.vec3_get_pos_in_chunk(GameFocusEntity.MapPosition, SIM_RANGE))
+	update_map(get_chunks_to_load())
 
 # Gets chunks that need to be loaded to the map depending on SimulatedEntities
-func get_chunks_to_load() -> Array:
-	var ChunksToLoad := []
+func get_chunks_to_load() -> Dictionary:
+	var ChunksToLoad := {} # { Vector3:renderBool }
 	for entity in SimulatedEntities:
-		var sqrRange := LibK.Vectors.vec3_get_square(entity.MapPosition, SIM_RANGE, false)
+		var sqrRange := LibK.Vectors.vec3_get_range_2d(entity.MapPosition, SIM_RANGE)
+		if entity is PlayerEntity:
+			for chunkV3 in sqrRange:
+				ChunksToLoad[chunkV3] = true
+			continue
 		for chunkV3 in sqrRange:
-			if ChunksToLoad.has(chunkV3): continue
-			ChunksToLoad.append(chunkV3)
+			ChunksToLoad[chunkV3] = false
 	return ChunksToLoad
 
 # Updates the whole game map based on data from save
-func update_map(ChunksToLoad:Array, ChunksToRender:Array) -> void:
+func update_map(ChunksToLoad:Dictionary) -> void:
 	# Loading chunks that are not yet rendered
 	for chunkV3 in ChunksToLoad:
 		if LoadedChunks.has(chunkV3): continue
 		var DataDict := SaveManager.get_TileData_on_chunk(chunkV3, DATA.TILEMAPS.CHUNK_SIZE)
-		#if chunkV3 == Vector3(0,0,0): print(DataDict)
+		
 		# If chunks in range of focus object load them to TileMaps
-		if(ChunksToRender.has(chunkV3)):
+		if(ChunksToLoad[chunkV3]):
 			$TileMapManager.load_chunk_to_tilemap(chunkV3, DataDict)
 		$EntityManager.load_entities_on_chunk(chunkV3, DataDict)
-
 		LoadedChunks.append(chunkV3)
 	
 	# Unload old chunks that are not in range (iterate backwards)
@@ -73,10 +74,9 @@ func update_map(ChunksToLoad:Array, ChunksToRender:Array) -> void:
 		if ChunksToLoad.has(chunkV3): continue
 		
 		# If chunks in range of focus object unload them from TileMaps
-		if(ChunksToRender.has(chunkV3)):
+		if(ChunksToLoad[chunkV3]):
 			$TileMapManager.unload_chunk_from_tilemap(chunkV3)
 		$EntityManager.unload_entities_on_chunk(chunkV3)
-
 		LoadedChunks.remove(i)
 	
 	$TileMapManager.update_all_TM_bitmask()

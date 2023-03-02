@@ -22,14 +22,14 @@ func before_each():
 	add_child(TileMapManager)
 
 func get_regular(sqlsave:SQLSave, TestPosV3:Array, SavedData:Dictionary) -> void:
-	var GetTimer = STimer.new(Time.get_ticks_msec())
+	var GetTimer = STimer.new()
 	for posV3 in TestPosV3:
 		var GetTD := sqlsave.get_TileData_on(posV3)
 		assert_true(str(SavedData[posV3]) == str(GetTD), "Get TileData (create) content does not match: "+str(SavedData[posV3])+"=!"+str(GetTD)+", Pos:"+str(posV3))
 	LOG_GUT(["Get time (msec) (regular): ", GetTimer.get_result()])
 
 func get_bulk(sqlsave:SQLSave, TestChunks:Array, SavedData:Dictionary) -> void:
-	var GetTimer = STimer.new(Time.get_ticks_msec())
+	var GetTimer = STimer.new()
 	for chunkPosV3 in TestChunks:
 		var ChunkData := sqlsave.get_TileData_on_chunk(chunkPosV3, SQLSave.MAPDATA_CHUNK_SIZE)
 		for posV3 in ChunkData:
@@ -37,9 +37,10 @@ func get_bulk(sqlsave:SQLSave, TestChunks:Array, SavedData:Dictionary) -> void:
 	LOG_GUT(["Get time (msec) (bulk): ", GetTimer.get_result()])
 
 func test_SQLSave_TileData():
-	var sqlsave := SQLSave.new(SAV_NAME, SAV_FOLDER, TileMapManager.TileMaps, true)
-	assert_true(sqlsave.isReadyNoErr, "Failed to init save")
-
+	var sqlsave := SQLSave.new(SAV_NAME, SAV_FOLDER)
+	assert_true(sqlsave.create_new_save(TileMapManager.TileMaps))
+	assert_true(sqlsave.load(TileMapManager.TileMaps), "Failed to init save")
+	
 	var RTileMap:TileMap = TileMapManager.TileMaps[randi()%TileMapManager.TileMaps.size()]
 	var RTileMapName:String = RTileMap.get_name()
 	var TileIds:Array = RTileMap.tile_set.get_tiles_ids()
@@ -56,13 +57,12 @@ func test_SQLSave_TileData():
 	
 	# Set tiles in save and create a dict copy to compare to later
 	var SavedData := {}
-	var SetTimer = STimer.new(Time.get_ticks_msec())
+	var SetTimer = STimer.new()
 	for posV3 in TestPosV3:
 		var RTD := TileData.new({RTileMapName:TileIds[0]})
 		assert_true(sqlsave.set_TileData_on(posV3, RTD), "Failed to set tile on position: "+str(posV3))
 		SavedData[posV3] = TileData.new({RTileMapName:TileIds[0]})
 	LOG_GUT(["Set time (msec): ", SetTimer.get_result()])
-	
 	
 	# Get tiles from save
 	get_regular(sqlsave, TestPosV3, SavedData)
@@ -73,11 +73,11 @@ func test_SQLSave_TileData():
 	sqlsave = null
 	
 	# Simulate trying to access data after save
-	var sqlload := SQLSave.new(SAV_NAME, SAV_FOLDER, TileMapManager.TileMaps)
-	assert_true(sqlload.isReadyNoErr, "Failed to initialize SQLSave on load")
+	var sqlload := SQLSave.new(SAV_NAME, SAV_FOLDER)
+	assert_true(sqlload.load(TileMapManager.TileMaps), "Failed to initialize SQLSave on load")
 	
 	# Get tiles from save
-	var LGetTimer = STimer.new(Time.get_ticks_msec())
+	var LGetTimer = STimer.new()
 	for posV3 in TestPosV3:
 		var GetTD := sqlload.get_TileData_on(posV3)
 		assert_true(str(SavedData[posV3]) == str(GetTD), "Get TileData (load) content does not match: "+str(SavedData[posV3])+"=!"+str(GetTD)+", Pos:"+str(posV3))
@@ -86,8 +86,9 @@ func test_SQLSave_TileData():
 	assert_true(SQLSave.delete_SQLDB_file(SAV_FOLDER, SAV_NAME) == OK, "Failed to delete save")
 
 func test_SQLSave_Entity():
-	var sqlsave := SQLSave.new(SAV_NAME, SAV_FOLDER, TileMapManager.TileMaps, true)
-	assert_true(sqlsave.isReadyNoErr, "Failed to init save")
+	var sqlsave := SQLSave.new(SAV_NAME, SAV_FOLDER, true)
+	assert_true(sqlsave.create_new_save(TileMapManager.TileMaps))
+	assert_true(sqlsave.load(TileMapManager.TileMaps), "Failed to init save")
 
 	LOG_GUT(["Entity save test: "])
 	var ENUM = 10 # Make sure to be in range of render

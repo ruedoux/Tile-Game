@@ -183,7 +183,6 @@ func set_selected_tile(tileID:int):
 # Filter Items
 ### ----------------------------------------------------
 
-
 func _filter_input(event:InputEvent):
 	if not _flag_control("addingFilter"): return
 	
@@ -203,16 +202,11 @@ func _on_Filter_text_entered(new_text: String) -> void:
 # Update chunks
 ### ----------------------------------------------------
 
-
 # Renders chunks as in normal game based on camera position (as simulated entity)
-func update_EditedMap_chunks():
-	var camChunk:Vector2 = LibK.Vectors.scale_down_vec2($Cam.global_position, DATA.TILEMAPS.CHUNK_SIZE*DATA.TILEMAPS.BASE_SCALE)
-	var chunksToRender:Array = []
-	var posToRender:Array = LibK.Vectors.vec2_get_square(camChunk, 1)
-	
-	for pos in posToRender:
-		chunksToRender.append(LibK.Vectors.vec2_vec3(pos,$Cam.currentElevation))
-	
+func update_EditedMap_chunks() -> void:
+	var camChunk := LibK.Vectors.scale_down_vec2($Cam.global_position, DATA.TILEMAPS.CHUNK_SIZE*DATA.TILEMAPS.BASE_SCALE)
+	var chunksToRender := LibK.Vectors.vec3_get_range_2d(LibK.Vectors.vec2_vec3(camChunk, $Cam.currentElevation), 1)
+
 	# Loading chunks that are not yet rendered
 	for chunkV3 in chunksToRender:
 		if $TileMapManager.RenderedChunks.has(chunkV3): continue
@@ -231,7 +225,6 @@ func update_EditedMap_chunks():
 ### ----------------------------------------------------
 # Save / Load
 ### ----------------------------------------------------
-
 
 func _save_input(event:InputEvent) -> void:
 	if not _flag_control("isSaving"): return
@@ -257,20 +250,18 @@ func _on_SaveEdit_text_entered(mapName:String) -> void:
 	_hide_lineEdit("isSaving", UIElement.SaveEdit)
 
 func _on_LoadEdit_text_entered(MapName: String) -> void:
-	var Temp := SQLSave.new(MapName, SaveManager.MAP_FOLDER, TileSelect.allTileMaps)
-	if(Temp.isReadyNoErr):
+	var Temp := SQLSave.new(MapName, SaveManager.MAP_FOLDER)
+	if(Temp.load(TileSelect.allTileMaps)):
 		EditedMap = Temp
 	else:
 		Logger.logErr(["Failed to load: ", MapName], get_stack())
 	
-	update_EditedMap_chunks()
 	$TileMapManager.unload_all_chunks()
 	_hide_lineEdit("isLoading", UIElement.LoadEdit)
 
 ### ----------------------------------------------------
 # GOTO
 ### ----------------------------------------------------
-
 
 func _goto_input(event:InputEvent) -> void:
 	if not _flag_control("goto"): return
@@ -297,7 +288,6 @@ func _on_GOTO_text_entered(new_text: String) -> void:
 # Elevation
 ### ----------------------------------------------------
 
-
 func _elevation_input(event:InputEvent):
 	if event.is_action_pressed(DATA.INPUT.MAP["-"]):
 		change_elevation(-1)
@@ -312,7 +302,6 @@ func change_elevation(direction:int):
 ### ----------------------------------------------------
 # UI Control
 ### ----------------------------------------------------
-
 
 func _physics_process(_delta: float) -> void:
 	UIZone = LibK.UI.is_mouse_on_ui(UIElement.TileScroll, UIElement.Parent)

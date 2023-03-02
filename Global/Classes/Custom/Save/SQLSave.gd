@@ -37,47 +37,40 @@ var TS_CONTROL := Dictionary() # { TSName:{tileID:tileName} }
 # FUNCTIONS
 ### ----------------------------------------------------
 
-func _init(fileName:String, fileDir:String, TileMaps:Array, makeNew:bool = false, verbose = false) -> void:
+func _init(fileName:String, fileDir:String, verbose = false) -> void:
 	_setupDB(fileName, fileDir, verbose)
 
-	if(makeNew): if(not _create_new_save(TileMaps)): return
+# Should be called after init before trying to acess data from save
+func load(TileMaps:Array) -> bool:
+	isReadyNoErr = false
+	SQL_DB_GLOBAL.path = DEST_PATH
+
 	if(not LibK.Files.file_exist(DEST_PATH)):
 		Logger.logErr(["Tried to init non existing save: ", DEST_PATH], get_stack())
-		return
-	if(not _initialize()): return
-	if(not _check_compatible(TileMaps)): return
+		return isReadyNoErr
+	
+	TS_CONTROL = _get_dict_from_table(
+		TABLE_NAMES.keys()[TABLE_NAMES.GAMEDATA_TABLE],
+		GAMEDATA_KEYS.keys()[GAMEDATA_KEYS.TS_CONTROL])
+	
+	if(TS_CONTROL.empty()):
+		Logger.logErr(["Failed do initialize TS_CONTROL from SQL save, str2var is not Dictionary: ", DEST_PATH], get_stack())
+		return isReadyNoErr
 
+	if(not check_compatible(TileMaps)): 
+		return isReadyNoErr
+	
+	if(LibK.Files.copy_file(DEST_PATH, TEMP_PATH) != OK):
+		Logger.logErr(["Failed to copy db from dest to temp: ", DEST_PATH, " -> ", TEMP_PATH], get_stack())
+		return isReadyNoErr
+	
+	SQL_DB_GLOBAL.path = TEMP_PATH
 	isReadyNoErr = true
 	Logger.logMS(["Loaded SQLSave: ", DEST_PATH])
-	
-# Should be called after init before trying to acess data from save
-# Loads all metadata to cache variables, copies save to temp
-func _initialize() -> bool:
-	if(not LibK.Files.file_exist(DEST_PATH)):
-		Logger.logErr(["Unable to initialize save, file doesnt exist: ", DEST_PATH], get_stack())
-		return false
-	
-	var result := LibK.Files.copy_file(DEST_PATH, TEMP_PATH)
-	if(not result == OK):
-		Logger.logErr(["Failed to copy db from dest to temp: ", DEST_PATH, " -> ", TEMP_PATH], get_stack())
-		return false
-	
-	# Initialize TS_CONTROL
-	var tempVar = str2var(sql_load_compressed(
-		TABLE_NAMES.keys()[TABLE_NAMES.GAMEDATA_TABLE],
-		GAMEDATA_KEYS.keys()[GAMEDATA_KEYS.TS_CONTROL]))
-	
-	if(not tempVar is Dictionary):
-		Logger.logErr(["Failed do initialize TS_CONTROL from SQL save, str2var is not Dictionary: ", TEMP_PATH], get_stack())
-		return false
-	
-	TS_CONTROL = tempVar
-	
-	if(beVerbose): Logger.logMS(["Initialized save: ", DEST_PATH, " -> ", TEMP_PATH])
-	return true
+	return isReadyNoErr
 
-# Check if the current tilemaps are compatible with TS_CONTROL tilemaps
-func _check_compatible(TileMaps:Array) -> bool:
+# Check if tilemaps are compatible with TS_CONTROL tilemaps
+func check_compatible(TileMaps:Array) -> bool:
 	var isOK := true
 	for tileMap in TileMaps:
 		var TSName:String = tileMap.get_name()
@@ -133,14 +126,14 @@ func save(savePath:String = "") -> bool:
 
 # Returns saved player data from save
 func get_PlayerEntity() -> PlayerEntity:
-	var PlayerEntityStr = sql_load_compressed(
+	var PlayerEntityStr = _sql_load_compressed(
 		TABLE_NAMES.keys()[TABLE_NAMES.GAMEDATA_TABLE],
 		GAMEDATA_KEYS.keys()[GAMEDATA_KEYS.PLAYER_DATA])
 	return PlayerEntity.new().from_str(PlayerEntityStr)
 
 # Saves Player Entity
 func set_PlayerEntity(Player:PlayerEntity) -> bool:
-	sql_save_compressed(
+	_sql_save_compressed(
 		Player.to_string(),
 		TABLE_NAMES.keys()[TABLE_NAMES.GAMEDATA_TABLE],
 		GAMEDATA_KEYS.keys()[GAMEDATA_KEYS.PLAYER_DATA])
@@ -157,6 +150,13 @@ func set_TileData_on(posV3:Vector3, tileData:TileData) -> bool:
 	_update_SQLLoadedChunks(LibK.Vectors.scale_down_vec3(posV3, MAPDATA_CHUNK_SIZE))
 	MapData[posV3] = str(tileData)
 	return true
+
+# Returns tile on a given position (with compatibility check, not meant for bulk)
+# Returns a new empty tiledata on fail
+func get_TileData_on(posV3:Vector3) -> TileData:
+	_update_SQLLoadedChunks(LibK.Vectors.scale_down_vec3(posV3, MAPDATA_CHUNK_SIZE))
+	if(not MapData.has(posV3)): return TileData.new()
+	return TileData.new().from_str(MapData[posV3])
 
 # Removes TileData on a position permamently
 # Retruns true if data was erased
@@ -199,13 +199,6 @@ func remove_Entity_from_TileData(posV3:Vector3) -> bool:
 	MapData[posV3] = str(editedTD)
 	return true
 
-# Returns tile on a given position (with compatibility check, not meant for bulk)
-# Returns a new empty tiledata on fail
-func get_TileData_on(posV3:Vector3) -> TileData:
-	_update_SQLLoadedChunks(LibK.Vectors.scale_down_vec3(posV3, MAPDATA_CHUNK_SIZE))
-	if(not MapData.has(posV3)): return TileData.new()
-	return TileData.new().from_str(MapData[posV3])
-
 # Get positions in chunk, better optimized for getting a lot of data (no check for every tile)
 func get_TileData_on_chunk(chunkPosV3:Vector3, chunkSize:int) -> Dictionary:
 	if(not MAPDATA_CHUNK_SIZE%chunkSize == 0):
@@ -229,7 +222,7 @@ func get_TileData_on_chunk(chunkPosV3:Vector3, chunkSize:int) -> Dictionary:
 
 # Load data from SQLChunk to MapData
 func _load_SQLChunk(SQLChunkPos:Vector3) -> void:
-	var converted = str2var(sql_load_compressed(TABLE_NAMES.keys()[TABLE_NAMES.MAPDATA_TABLE], SQLChunkPos))
+	var converted = str2var(_sql_load_compressed(TABLE_NAMES.keys()[TABLE_NAMES.MAPDATA_TABLE], SQLChunkPos))
 	
 	# Merge data for every stored MapData key
 	if(converted is Dictionary):
@@ -256,7 +249,7 @@ func _unload_SQLChunk(SQLChunkPos:Vector3) -> void:
 		DictToSave[posV3] = MapData[posV3]
 		MapData.erase(posV3)
 	
-	sql_save_compressed(var2str(DictToSave), TABLE_NAMES.keys()[TABLE_NAMES.MAPDATA_TABLE], SQLChunkPos)
+	_sql_save_compressed(var2str(DictToSave), TABLE_NAMES.keys()[TABLE_NAMES.MAPDATA_TABLE], SQLChunkPos)
 	
 	# Get rid of entry fully
 	SQLLoadedChunks.erase(SQLChunkPos)

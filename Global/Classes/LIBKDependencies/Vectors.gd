@@ -8,42 +8,26 @@ extends Script
 ### ----------------------------------------------------
 
 
-# Function generates array of positions in range of given base position
-# Used for getting neighbouring vectors to a given vector
-# Ex. drawing range of a weapon on a tilemap, drawing vision
-static func vec2_get_square(atPos:Vector2, squareRange:int) -> Array:
-	squareRange+=1
-	var Square = []
-	var squareSideSize=squareRange*2-1
-	for x in range(squareSideSize):
-		x = x-(squareRange-1)
-		for y in range(squareSideSize):
-			y = y-(squareRange-1)
-			Square.append(Vector2(x,y)+atPos)
-	return Square
+static func vec3_get_range_2d(atPos:Vector3, squareRange:int) -> Array:
+	var result := []
+	for x in range(-squareRange, squareRange + 1):
+		for y in range(-squareRange, squareRange + 1):
+			result.append(Vector3(x,y,0) + atPos)
+	return result
 
-static func vec3_get_square(atPos:Vector3, squareRange:int, sameLevel:bool) -> Array:
-	squareRange+=1
-	var Square=[]
-	var squareSideSize=squareRange*2-1
-	for x in range(squareSideSize):
-		x = x-(squareRange-1)
-		for y in range(squareSideSize):
-			y = y-(squareRange-1)
-			if sameLevel:
-				Square.append(Vector3(x,y,0) + atPos)
-				continue
-			for z in range(squareSideSize):
-				z = z-(squareRange-1)
-				Square.append(Vector3(x,y,z) + atPos)
-	return Square
+static func vec3_get_range_3d(atPos:Vector3, squareRange:int) -> Array:
+	var result := []
+	for x in range(-squareRange, squareRange + 1):
+		for y in range(-squareRange, squareRange + 1):
+			for z in range(-squareRange, squareRange + 1):
+				result.append(Vector3(x,y,z) + atPos)
+	return result
 
-# Removes vectors from array that are too far from a middleV
-static func vec_distance_cut(VecArr:Array, middleV, distance:int):
-	var result=[]
-	for v in VecArr:
-		if v.distance_to(middleV)<=(distance-1):
-			result.append(v)
+static func vec2_get_range(atPos:Vector2, squareRange:int) -> Array:
+	var result := []
+	for x in range(-squareRange, squareRange + 1):
+		for y in range(-squareRange, squareRange + 1):
+			result.append(Vector2(x,y) + atPos)
 	return result
 
 ### ----------------------------------------------------
@@ -51,8 +35,11 @@ static func vec_distance_cut(VecArr:Array, middleV, distance:int):
 ### ----------------------------------------------------
 
 
+# Converts Vector2 to Vector3
 static func vec2_vec3(v:Vector2, z:int = 0) -> Vector3:
 	return Vector3(v.x, v.y, z)
+	
+#Converts Vector3 to Vector2
 static func vec3_vec2(v:Vector3) -> Vector2:
 	return Vector2(v.x, v.y)
 

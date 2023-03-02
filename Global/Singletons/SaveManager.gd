@@ -25,13 +25,13 @@ func _notification(what:int) -> void:
 
 # Creates an empty save in a given destionation
 func create_empty_save(MapName:String, folderPath:String, TileMaps:Array) -> bool:
-	var sqlsave := SQLSave.new(MapName, folderPath, TileMaps, true)
-	return sqlsave.isReadyNoErr
+	var sqlsave := SQLSave.new(MapName, folderPath)
+	return sqlsave.create_new_save(TileMaps)
 
 # Loads a given map
 func _load_map(MapName:String, TileMaps:Array) -> bool:
-	var Temp := SQLSave.new(MapName, MAP_FOLDER, TileMaps)
-	if(not Temp.isReadyNoErr):
+	var Temp := SQLSave.new(MapName, MAP_FOLDER)
+	if(not Temp.load(TileMaps)):
 		return false
 	_CurrentMap = Temp
 	return true
@@ -39,10 +39,12 @@ func _load_map(MapName:String, TileMaps:Array) -> bool:
 # Loads a given map with corresponding save
 func load_sav(SaveName:String, MapName:String, TileMaps:Array) -> bool:
 	if(not _load_map(MapName, TileMaps)):
+		Logger.logErr(["Failed to load map: ", MapName], get_stack())
 		return false
 	
-	var Temp := SQLSave.new(SaveName, SAV_FOLDER, TileMaps)
-	if(not Temp.isReadyNoErr):
+	var Temp := SQLSave.new(SaveName, SAV_FOLDER)
+	if(not Temp.load(TileMaps)):
+		Logger.logErr(["Failed to load sav: ", SaveName], get_stack())
 		return false
 	_CurrentSav = Temp
 	return true
@@ -101,9 +103,7 @@ func get_TileData_on(posV3:Vector3) -> TileData:
 # Wrapper function, checks if TileData was edited in _CurrentSav, if not get tile from _CurrentMap
 func get_TileData_on_chunk(chunkPosV3:Vector3, chunkSize:int) -> Dictionary:
 	var savResult := _CurrentSav.get_TileData_on_chunk(chunkPosV3, chunkSize)
-	var mapResult := _CurrentMap.get_TileData_on_chunk(chunkPosV3, chunkSize)
-	for posV3 in savResult:
-		if(savResult[posV3].is_empty()): savResult[posV3] = mapResult[posV3]
+	savResult.merge(_CurrentMap.get_TileData_on_chunk(chunkPosV3, chunkSize))
 	return savResult
 
 func get_PlayerEntity() -> PlayerEntity:

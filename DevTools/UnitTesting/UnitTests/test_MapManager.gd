@@ -15,19 +15,14 @@ var MapManager:Node = null
 # FUNCTIONS
 ### ----------------------------------------------------
 
-func before_all():
-	MapManager = _MM.instance()
-	add_child(MapManager)
-
-func after_all():
-	MapManager.queue_free()
-
 func before_each():
+	MapManager = autofree(_MM.instance())
+	add_child(MapManager)
 	var TileMaps:Array = $MapManager/TileMapManager.TileMaps
-	if(not SaveManager._create_empty_save(SAVE_NAME, SaveManager.MAP_FOLDER, TileMaps)):
+	if(not SaveManager.create_empty_save(SAVE_NAME, SaveManager.MAP_FOLDER, TileMaps)):
 		push_error("Failed to init unit test")
 		get_tree().quit()
-	if(not SaveManager._create_empty_save(SAVE_NAME, SaveManager.SAV_FOLDER, TileMaps)):
+	if(not SaveManager.create_empty_save(SAVE_NAME, SaveManager.SAV_FOLDER, TileMaps)):
 		push_error("Failed to init unit test")
 		get_tree().quit()
 	assert_true(MapManager.start_simulation(SAVE_NAME, SAVE_NAME), "Failed to start simulation")
@@ -39,7 +34,8 @@ func after_each():
 	print_stray_nodes()
 
 func test_MapManager():
-	assert_true(MapManager.LoadedChunks.size() == pow(MapManager.SIM_RANGE*2+1, 3), "LoadedChunks size doesnt match: "+ str(pow(MapManager.SIM_RANGE*2+1, 3)))
+	assert_true(MapManager.LoadedChunks.size() == pow(MapManager.SIM_RANGE*2+1, 2),
+				"LoadedChunks size doesnt match: "+ str(pow(MapManager.SIM_RANGE*2+1, 2)) +" =! "+ str(MapManager.LoadedChunks.size()))
 	assert_true(MapManager.GameFocusEntity is PlayerEntity, "GameFocusEntity is not PlayerEntity")
 	assert_true(MapManager.SimulatedEntities.size() == 1)
 
@@ -49,6 +45,8 @@ func test_EntityManager():
 		var entity := GameEntity.new()
 		assert_true(SaveManager.add_Entity_to_TileData(Vector3(i+1,0,0), entity))
 		entity.free()
+		print(SaveManager.get_TileData_on(Vector3(i+1,0,0)).is_empty())
+		print(SaveManager.get_TileData_on(Vector3(213,2,2)).is_empty())
 	
 	MapManager.update_simulation()
 	

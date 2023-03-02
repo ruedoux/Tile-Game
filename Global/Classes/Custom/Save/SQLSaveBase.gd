@@ -49,7 +49,6 @@ func _setupDB(fileName:String, fileDir:String, verbose = false):
 	TEMP_PATH = FILE_DIR + FILE_NAME + TEMP_MARKER + ".db"
 
 	SQL_DB_GLOBAL = SQLite.new()
-	SQL_DB_GLOBAL.path = TEMP_PATH
 	SQL_DB_GLOBAL.verbosity_level = 0
 
 # Deletes TEMP file
@@ -67,13 +66,13 @@ func fill_GAMEDATA_TABLE(TileMaps:Array) -> void:
 		for index in range(tileNamesIDs.size()):
 			TSControlTemp[TSName][tileNamesIDs[index][1]] = tileNamesIDs[index][0]
 	
-	sql_save_compressed(
+	_sql_save_compressed(
 		var2str(TSControlTemp).replace(" ", ""), 
 		TABLE_NAMES.keys()[TABLE_NAMES.GAMEDATA_TABLE], 
 		GAMEDATA_KEYS.keys()[GAMEDATA_KEYS.TS_CONTROL])
 	
 	var TemplatePlayer := PlayerEntity.new()
-	sql_save_compressed(
+	_sql_save_compressed(
 		TemplatePlayer.to_string(),
 		TABLE_NAMES.keys()[TABLE_NAMES.GAMEDATA_TABLE],
 		GAMEDATA_KEYS.keys()[GAMEDATA_KEYS.PLAYER_DATA])
@@ -81,7 +80,7 @@ func fill_GAMEDATA_TABLE(TileMaps:Array) -> void:
 
 # Compresses and saves data in sqlite db
 # Designed to compress big data chunks
-func sql_save_compressed(Str:String, tableName:String, KeyVar) -> void:
+func _sql_save_compressed(Str:String, tableName:String, KeyVar) -> void:
 	var B64C := LibK.Compression.compress_str(Str, SQLCOMPRESSION)
 	var values:String = "'" + str(KeyVar) + "','" + B64C + "','" + str(Str.length()) + "'"
 	do_query("REPLACE INTO "+tableName+" (Key,CData,DCSize) VALUES("+values+");")
@@ -89,7 +88,7 @@ func sql_save_compressed(Str:String, tableName:String, KeyVar) -> void:
 	if(beVerbose): Logger.logMS(["Saved CData to SQLite: ", tableName, " ", KeyVar])
 
 # Loads chunk from save, returns empty string if position not saved
-func sql_load_compressed(tableName:String, KeyVar) -> String:
+func _sql_load_compressed(tableName:String, KeyVar) -> String:
 	if (not row_exists(tableName, "Key", str(KeyVar))): return ""
 	var queryResult := get_query_result("SELECT CData,DCSize FROM "+tableName+" WHERE Key='"+str(KeyVar)+"';")
 
@@ -97,7 +96,7 @@ func sql_load_compressed(tableName:String, KeyVar) -> String:
 	return LibK.Compression.decompress_str(queryResult[0]["CData"], SQLCOMPRESSION, queryResult[0]["DCSize"])
 
 # If save already exists, create a new one and put old one in the trash
-func _create_new_save(TileMaps:Array) -> bool:
+func create_new_save(TileMaps:Array) -> bool:
 	if(LibK.Files.file_exist(DEST_PATH)):
 		if(OS.move_to_trash(ProjectSettings.globalize_path(DEST_PATH)) != OK):
 			Logger.logErr(["Unable to delete save file: ", DEST_PATH], get_stack())
@@ -133,6 +132,13 @@ static func clean_TEMP(folderPath:String) -> bool:
 		if TEMP_MARKER in fileName:
 			isOK = isOK and (LibK.Files.delete_file(filepath) == OK)
 	return isOK
+
+# Tries to get dict form saved data, returns empty dict on fail
+func _get_dict_from_table(tableName:String, keyVar) -> Dictionary:
+	var tempVar = str2var(_sql_load_compressed(tableName, keyVar))
+	if(not tempVar is Dictionary):
+		return Dictionary()
+	return tempVar
 
 ### ----------------------------------------------------
 # Queries, these are not meant to be used where speed matters (open and close db in every function which is slow)

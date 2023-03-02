@@ -15,8 +15,8 @@ var startTime:int
 ### FUNCTIONS
 ### ----------------------------------------------------
 
-func _init(sTime:int) -> void:
-	startTime = sTime
+func _init() -> void:
+	startTime = Time.get_ticks_msec()
 
 
 func get_result():
