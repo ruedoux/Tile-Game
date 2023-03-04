@@ -45,11 +45,8 @@ func test_EntityManager():
 		var entity := GameEntity.new()
 		assert_true(SaveManager.add_Entity_to_TileData(Vector3(i+1,0,0), entity))
 		entity.free()
-		print(SaveManager.get_TileData_on(Vector3(i+1,0,0)).is_empty())
-		print(SaveManager.get_TileData_on(Vector3(213,2,2)).is_empty())
 	
-	MapManager.update_simulation()
+	MapManager.update_simulation(true)
 	
 	assert_true($MapManager/EntityManager.get_child_count() == ENUM, "Entity count should be equal to expected")
 	LOG_GUT(["Enity count: ", $MapManager/EntityManager.get_child_count(), ", expected: ", ENUM])
-	LOG_GUT([$MapManager/EntityManager.get_children()])
