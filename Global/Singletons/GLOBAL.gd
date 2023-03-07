@@ -8,7 +8,7 @@ tool
 extends Node
 
 ### ----------------------------------------------------
-# CLASSES
+# VARIABLES
 ### ----------------------------------------------------
 
 
@@ -16,13 +16,10 @@ extends Node
 # Material types define color and properties of objects and tiles in the game
 # Colors: https://www.rapidtables.com/web/color/RGB_Color.html
 class MATERIALS: 
-
 	# Tag for generated tiles
 	const GENERATED_TAG:String = "_GEN_" 
-
 	# Enum of all material types
 	enum TYPES {WoodenPlank,Stone,Dirt,Grass,DarkGrass}
-
 	const DB:Dictionary = {
 		TYPES.WoodenPlank:{"Color":Color('#816109')},
 		TYPES.Stone: 	  {"Color":Color('#708090')},
@@ -30,18 +27,16 @@ class MATERIALS:
 		TYPES.Grass: 	  {"Color":Color('#228B22')},
 		TYPES.DarkGrass:  {"Color":Color('#006400')},
 	}
-
 	static func CHECK_TYPES() -> bool:
 		var isOK:bool = true
 		for keyVal in TYPES.values():
 			if not keyVal in DB:
 				isOK = false
-				Logger.logErr(["DATA.MATERIALS - ", TYPES.keys()[keyVal], " missing in DB"], get_stack())
+				Logger.logErr(["GLOBAL.MATERIALS - ", TYPES.keys()[keyVal], " missing in DB"], get_stack())
 		
 		return isOK
 
 class INPUT:
-
 	# Stores data about what key translates to what action in input map
 	# Hardcode a key input when needed
 	const MAP = {

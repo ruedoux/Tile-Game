@@ -125,4 +125,4 @@ static func get_tile_names_and_IDs(tileSet:TileSet) -> Array:
 	return tileList
 
 static func get_tile_on_pos(pos:Vector2) -> Vector2:
-	return Vector2(floor( pos[0]/(DATA.TILEMAPS.BASE_SCALE) ), floor( pos[1]/(DATA.TILEMAPS.BASE_SCALE) ))
+	return Vector2(floor( pos[0]/(GLOBAL.TILEMAPS.BASE_SCALE) ), floor( pos[1]/(GLOBAL.TILEMAPS.BASE_SCALE) ))

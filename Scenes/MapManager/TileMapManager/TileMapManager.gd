@@ -21,7 +21,7 @@ var RenderedChunks := Array()
 
 # Setups all TileMaps from TileMap dir and adds them as children
 func _enter_tree() -> void:
-	for packed in LibK.Files.get_file_list_at_dir(DATA.TILEMAPS.TILEMAPS_DIR):
+	for packed in LibK.Files.get_file_list_at_dir(GLOBAL.TILEMAPS.TILEMAPS_DIR):
 		var filePath:String = packed[0]
 		var fileName:String = packed[1]
 		var TMScene:PackedScene = load(filePath + "/" + fileName + ".tscn")
@@ -45,7 +45,7 @@ func load_chunk_to_tilemap(chunkV3:Vector3, DataDict:Dictionary) -> void:
 	
 # Loads tiles from every TileMap on position, return false if tile not in loaded chunks
 func refresh_tile_on(posV3:Vector3, tileData:TileData) -> bool:
-	var chunkV3:Vector3 = LibK.Vectors.scale_down_vec3(posV3, DATA.TILEMAPS.CHUNK_SIZE)
+	var chunkV3:Vector3 = LibK.Vectors.scale_down_vec3(posV3, GLOBAL.TILEMAPS.CHUNK_SIZE)
 	if(not RenderedChunks.has(chunkV3)):
 		Logger.logErr(["Tried to refresh tile on unloaded chunk: ", chunkV3, ", pos: ", posV3], get_stack())
 		return false
@@ -61,7 +61,7 @@ func refresh_tile_on(posV3:Vector3, tileData:TileData) -> bool:
 
 # Unloads a single chunk from TileMaps
 func unload_chunk_from_tilemap(chunkV3:Vector3) -> void:
-	for posV3 in LibK.Vectors.vec3_get_pos_in_chunk(chunkV3, DATA.TILEMAPS.CHUNK_SIZE):
+	for posV3 in LibK.Vectors.vec3_get_pos_in_chunk(chunkV3, GLOBAL.TILEMAPS.CHUNK_SIZE):
 		for tileMap in TileMaps:
 			tileMap.set_cellv(LibK.Vectors.vec3_vec2(posV3), -1)
 	RenderedChunks.erase(chunkV3)

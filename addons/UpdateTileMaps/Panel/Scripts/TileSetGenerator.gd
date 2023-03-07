@@ -1,5 +1,5 @@
 ### ----------------------------------------------------
-### Helps with automatic tileset creation based on materials in DATA.gd singleton
+### Helps with automatic tileset creation based on materials in GLOBAL.gd singleton
 ### Short description:
 ### 	Every tile consists of Outline.png and BG.png
 ### 	BGs color is shifted to match material color
@@ -71,10 +71,10 @@ static func get_TileSets(tileMapsDir:String, logFunc:FuncRef) -> Dictionary:
 	
 	return TileSets
 
-# Adds autotiles according to types declared in DATA
+# Adds autotiles according to types declared in GLOBAL
 # data = {Autotile:{setName:setDir}, Single:{setName:setDir}}
 static func add_tile_types(tileSet:TileSet, data:Dictionary, logFunc:FuncRef) -> TileSet:
-	if not DATA.MATERIALS.CHECK_TYPES():
+	if not GLOBAL.MATERIALS.CHECK_TYPES():
 		logFunc.call_func(["[b]update terminated[/b]"], true)
 		return tileSet
 	
@@ -109,10 +109,10 @@ static func _add_tile_type(tileSet:TileSet, data:Dictionary, tileType:String, lo
 		var textureBG:Texture = load(textureBGPath)
 		var textureOutline:Texture = load(textureOutlinePath)
 		
-		for M_TYPE in DATA.MATERIALS.TYPES.values():
-			var M_COLOR:Color = DATA.MATERIALS.DB[M_TYPE]["Color"]
+		for M_TYPE in GLOBAL.MATERIALS.TYPES.values():
+			var M_COLOR:Color = GLOBAL.MATERIALS.DB[M_TYPE]["Color"]
 			var texture:Texture = LibK.Img.blend_textures(textureBG, textureOutline, M_COLOR, 0.5)
-			var tileName:String = DATA.MATERIALS.TYPES.keys()[M_TYPE] + setName + DATA.MATERIALS.GENERATED_TAG
+			var tileName:String = GLOBAL.MATERIALS.TYPES.keys()[M_TYPE] + setName + GLOBAL.MATERIALS.GENERATED_TAG
 			var tileMode:int = TileSet.SINGLE_TILE
 			if tileType == "Autotile": tileMode = TileSet.AUTO_TILE
 			
@@ -131,12 +131,12 @@ static func _remove_old_tiles(tileSet:TileSet, logFunc:FuncRef) -> TileSet:
 		var tileID:int = tileIDs[index]
 
 		# Only check for generated tiles
-		if not DATA.MATERIALS.GENERATED_TAG in tileName:
+		if not GLOBAL.MATERIALS.GENERATED_TAG in tileName:
 			continue
 		
 		# Delete outdated tiles
 		var isIn:bool = false
-		for materialName in DATA.MATERIALS.TYPES.keys():
+		for materialName in GLOBAL.MATERIALS.TYPES.keys():
 			if materialName in tileName:
 				isIn = true
 		

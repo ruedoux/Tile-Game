@@ -10,8 +10,8 @@ extends Script
 # VARIABLES
 ### ----------------------------------------------------
 
-const TILE_SIZE = Vector2(DATA.TILEMAPS.BASE_SCALE, DATA.TILEMAPS.BASE_SCALE)
-const TILEMAPS_DIR = DATA.TILEMAPS.TILEMAPS_DIR
+const TILE_SIZE = Vector2(GLOBAL.TILEMAPS.BASE_SCALE, GLOBAL.TILEMAPS.BASE_SCALE)
+const TILEMAPS_DIR = GLOBAL.TILEMAPS.TILEMAPS_DIR
 const TILES_SCRIPT_DIR = "res://Global/Singletons/TILES.gd"
 
 const SCRIPTS_GEN = preload("res://addons/UpdateTileMaps/Panel/Scripts/ScriptsGenerator.gd")
@@ -77,9 +77,9 @@ static func _update_tile_texture_offset(tileSet:TileSet, logFunc:FuncRef) -> Til
 		if tileMode == TileSet.SINGLE_TILE:
 			continue
 		
-		if tileSize[0] > DATA.TILEMAPS.BASE_SCALE or tileSize[1] > DATA.TILEMAPS.BASE_SCALE:
-			var offsetSizeX:int = DATA.TILEMAPS.BASE_SCALE - int(tileSize[0])
-			var offsetSizeY:int = DATA.TILEMAPS.BASE_SCALE - int(tileSize[1])
+		if tileSize[0] > GLOBAL.TILEMAPS.BASE_SCALE or tileSize[1] > GLOBAL.TILEMAPS.BASE_SCALE:
+			var offsetSizeX:int = GLOBAL.TILEMAPS.BASE_SCALE - int(tileSize[0])
+			var offsetSizeY:int = GLOBAL.TILEMAPS.BASE_SCALE - int(tileSize[1])
 			tileSet.tile_set_texture_offset(tileID,Vector2(offsetSizeX, offsetSizeY))
 			logFunc.call_func(["\tUpdated tile offset: ", tileSet.tile_get_name(tileID)], false)
 	logFunc.call_func(["\t[b]> updating tile offset[/b]"], false)

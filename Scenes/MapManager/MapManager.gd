@@ -50,7 +50,7 @@ func update_map(ChunksToLoad:Dictionary, reload:bool=false) -> void:
 	# Loading chunks that are not yet rendered
 	for chunkV3 in ChunksToLoad:
 		if LoadedChunks.has(chunkV3): continue
-		var DataDict := SaveManager.get_TileData_on_chunk(chunkV3, DATA.TILEMAPS.CHUNK_SIZE)
+		var DataDict := SaveManager.get_TileData_on_chunk(chunkV3, GLOBAL.TILEMAPS.CHUNK_SIZE)
 
 		# If chunks in range of focus object load them to TileMaps
 		if(ChunksToLoad[chunkV3]):

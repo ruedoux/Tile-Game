@@ -45,6 +45,11 @@ _global_script_classes=[ {
 "path": "res://Global/Classes/Custom/Entities/PlayerEntity.gd"
 }, {
 "base": "Reference",
+"class": "SMState",
+"language": "GDScript",
+"path": "res://Global/Classes/Custom/StateMachine/SMState.gd"
+}, {
+"base": "Reference",
 "class": "SQLSave",
 "language": "GDScript",
 "path": "res://Global/Classes/Custom/Save/SQLSave.gd"
@@ -59,6 +64,11 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://Global/Classes/Custom/Util/STimer.gd"
 }, {
+"base": "Reference",
+"class": "StateMachine",
+"language": "GDScript",
+"path": "res://Global/Classes/Custom/StateMachine/StateMachine.gd"
+}, {
 "base": "DataType",
 "class": "TileData",
 "language": "GDScript",
@@ -72,9 +82,11 @@ _global_script_class_icons={
 "GutTestLOG": "",
 "LibK": "",
 "PlayerEntity": "",
+"SMState": "",
 "SQLSave": "",
 "SQLiteWrapper": "",
 "STimer": "",
+"StateMachine": "",
 "TileData": ""
 }
 
@@ -84,7 +96,7 @@ config/name="Remaster"
 
 [autoload]
 
-DATA="*res://Global/Singletons/DATA.gd"
+GLOBAL="*res://Global/Singletons/GLOBAL.gd"
 TILES="*res://Global/Singletons/TILES.gd"
 Logger="*res://Global/Singletons/Logger.gd"
 SaveManager="*res://Global/Singletons/SaveManager.gd"
