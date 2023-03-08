@@ -10,6 +10,8 @@ class_name StateMachine
 # VARIABLES
 ### ----------------------------------------------------
 
+const ERROR = "ERROR_DEFAULT"
+
 var verbose := false
 
 # Describes currently set state of the state machine
@@ -76,10 +78,13 @@ func update_state_input(event:InputEvent) -> void:
 func redirect_signal(StateName:String, functionName:String, argArr:Array):
 	if(not StateTable.has(StateName)):
 		Logger.logErr(["State not in StateTable, add it first with add_state(), ", StateName], get_stack())
+		return ERROR
 	if(not StateTable[StateName] == CurrentState):
 		Logger.logErr(["Sent signal to a state that is not currently set but exists in StateTable, ", StateName, " ", functionName], get_stack())
-	if(CurrentState.has_method(functionName)):
+		return ERROR
+	if(not CurrentState.has_method(functionName)):
 		Logger.logErr(["State is missing function ", StateName, " ", functionName], get_stack())
+		return ERROR
 	return funcref(CurrentState, functionName).call_funcv(argArr)
 
 # Calls function of a given state regardless if its a current state
@@ -87,8 +92,8 @@ func redirect_signal(StateName:String, functionName:String, argArr:Array):
 func force_call(StateName:String, functionName:String, argArr:Array):
 	if(not StateTable.has(StateName)):
 		Logger.logErr(["State not in StateTable, add it first with add_state(), ", StateName], get_stack())
-		return null
-	if(not CurrentState.has_method(functionName)):
+		return ERROR
+	if(not StateTable[StateName].has_method(functionName)):
 		Logger.logErr(["State is missing function ", StateName, " ", functionName], get_stack())
-		return null
-	return funcref(CurrentState, functionName).call_funcv(argArr)
+		return ERROR
+	return funcref(StateTable[StateName], functionName).call_funcv(argArr)

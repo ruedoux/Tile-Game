@@ -17,6 +17,7 @@ extends Camera2D
 
 var zoomValue:float = 0.05
 var currentElevation:int = 0
+var inputActive:bool = true
 
 ### ----------------------------------------------------
 # FUNCTIONS

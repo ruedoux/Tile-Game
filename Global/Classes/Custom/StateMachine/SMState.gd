@@ -23,22 +23,14 @@ var StateMaster
 # Automatically assigns variables in State to variables in parent (by reference)
 func _init(caller:Node) -> void:
 	Caller = caller
-	if(caller == null): return
-	push_error("FIX, variables are not properlu copied to states")
-	for propertyInfo in get_script().get_script_property_list():
-		if(propertyInfo.name == "Caller"):
-			continue
-		if(not Caller.has_method(propertyInfo.name)):
-			var node:Node = Caller.get_node_or_null(propertyInfo.name)
-			if(node != null):
-				set(propertyInfo.name, node)
-			continue
-		set(propertyInfo.name, Caller.get(propertyInfo.name))
-		print(propertyInfo.name)
 
 # Called whenever a state is set as current by StateMachine
 func _state_set() -> void:
 	pass
+
+# Set of instructions executed at the end of state, can be overwritten
+func end_state() -> void:
+	StateMaster.set_default_state()
 
 # Returns name of a state, needs to be overwriten
 static func get_name() -> String:

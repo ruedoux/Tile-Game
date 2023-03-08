@@ -36,27 +36,6 @@ class MATERIALS:
 		
 		return isOK
 
-class INPUT:
-	# Stores data about what key translates to what action in input map
-	# Hardcode a key input when needed
-	const MAP = {
-		"W" : "Up",
-		"A" : "Left",
-		"S" : "Down",
-		"D" : "Right",
-		"E" : "E",
-		"Q" : "Q",
-		"Z" : "Z",
-		"X" : "X",
-		"LAlt" : "LAlt",
-		"LCtrl" : "LCtrl",
-		"ESC" : "ESC",
-		"F" : "F",
-		"G" : "G",
-		"=" : "Equal",
-		"-" : "Minus",
-	}
-
 class TILEMAPS: # Stores data regardning map, TileMaps ect
 	const TILEMAPS_DIR:String = "res://Resources/TileMaps/"
 	const SIM_RANGE = 1   # How far (chunks) world will generate 
@@ -66,6 +45,24 @@ class TILEMAPS: # Stores data regardning map, TileMaps ect
 
 class TEXTURES:
 	const ENTITY_SET_PATH = "res://Resources/Textures/EntitySet.png"
+
+const INPUT_MAP = {
+	"W" : "Up",
+	"A" : "Left",
+	"S" : "Down",
+	"D" : "Right",
+	"E" : "E",
+	"Q" : "Q",
+	"Z" : "Z",
+	"X" : "X",
+	"LAlt" : "LAlt",
+	"LCtrl" : "LCtrl",
+	"ESC" : "ESC",
+	"F" : "F",
+	"G" : "G",
+	"=" : "Equal",
+	"-" : "Minus",
+}
 
 ### ----------------------------------------------------
 # FUNCTIONS

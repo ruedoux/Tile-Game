@@ -76,7 +76,7 @@ func _ready() -> void:
 	_init_TM_selection()
 	_init_tile_select()
 	
-	if(EditorStateMachine.force_call(NORM_STATE.get_name(), "switch_TM_selection", [0]) == null):
+	if(EditorStateMachine.force_call(NORM_STATE.get_name(), "switch_TM_selection", [0]) == StateMachine.ERROR):
 		push_error("Failed to init EditorStateMachine")
 		get_tree().quit()
 
@@ -139,89 +139,94 @@ func _draw_loaded_chunks():
 func _input(event:InputEvent) -> void:
 	if(not inputActive): return
 	EditorStateMachine.update_state_input(event)
+	update()
+	update_EditedMap_chunks()
 
 # Default editor state
 class NORM_STATE extends SMState:
-	var TileSelect:Dictionary
-	var UIElement:Dictionary
 	var TileMapManager:Node2D
-	var EditedMap:SQLSave
-	var UIZone:bool
 	var Cam:Camera2D
+	var T:Node2D # Short for caller
 	
 	func _init(caller:Node2D).(caller) -> void:
-		pass
+		TileMapManager = caller.get_node("TileMapManager")
+		Cam = caller.get_node("Cam")
+		T = caller
 
 	static func get_name() -> String:
 		return "NORM_STATE"
 	
-	# This could be an input map but doing it with ifs is good enough
-	func update_input(event:InputEvent) -> void:
-		UIZone = LibK.UI.is_mouse_on_ui(UIElement.TileScroll, UIElement.Parent)
-
-		if(((event is InputEventMouseButton) or (event is InputEventMouseMotion)) and not UIZone):
-			if not TileSelect.shownTiles.size() > 0: return # If list empty dont pick
+	func mouse_input(event:InputEvent) -> void:
+		if(event is InputEventMouseButton):
+			if(event.button_index == BUTTON_WHEEL_UP):
+				Cam.zoom_camera(-Cam.zoomValue)
+			elif(event.button_index == BUTTON_WHEEL_DOWN):
+				Cam.zoom_camera(Cam.zoomValue)
+		if(event is InputEventMouseMotion):
+			if(event.button_mask == BUTTON_MASK_MIDDLE):
+				Cam.position -= event.relative * Cam.zoom
+		
+		if(event is InputEventMouseButton or event is InputEventMouseMotion):
+			if(not T.TileSelect.shownTiles.size() > 0): 
+				return
 			if event.button_mask == BUTTON_MASK_LEFT:  
-				var tileID:int = TileSelect.shownTiles[TileSelect.listIndex][1]
+				var tileID:int = T.TileSelect.shownTiles[T.TileSelect.listIndex][1]
 				set_selected_tile(tileID)
 			if event.button_mask == BUTTON_MASK_RIGHT: 
 				set_selected_tile(-1)
+	
+	# This could be an input map but doing it with ifs is good enough
+	func update_input(event:InputEvent) -> void:
+		if(not LibK.UI.is_mouse_on_ui(T.UIElement.TileScroll, T.UIElement.Parent)):
+			mouse_input(event)
+		if not event is InputEventKey: 
+			return
 		
-		if(not UIZone):
-			if(event is InputEventMouseButton):
-				if(event.button_index == BUTTON_WHEEL_UP):
-					Cam.zoom_camera(-Cam.zoomValue)
-				elif(event.button_index == BUTTON_WHEEL_DOWN):
-					Cam.zoom_camera(Cam.zoomValue)
-			if(event is InputEventMouseMotion):
-				if(event.button_mask == BUTTON_MASK_MIDDLE):
-					Cam.position -= event.relative * Cam.zoom
-		
-		if(event.is_action_pressed(GLOBAL.INPUT.MAP["E"])): 
-			switch_TM_selection(TileSelect.TMIndex + 1)
-		elif(event.is_action_pressed(GLOBAL.INPUT.MAP["Q"])): 
-			switch_TM_selection(TileSelect.TMIndex - 1)
-		elif(event.is_action_pressed(GLOBAL.INPUT.MAP["X"])):
-			switch_tile_selection(TileSelect.listIndex + 1)
-		elif(event.is_action_pressed(GLOBAL.INPUT.MAP["Z"])): 
-			switch_tile_selection(TileSelect.listIndex - 1)
-		elif(event.is_action_pressed(GLOBAL.INPUT.MAP["-"])):
+		if(event.is_action_pressed(GLOBAL.INPUT_MAP["E"])): 
+			switch_TM_selection(T.TileSelect.TMIndex + 1)
+		elif(event.is_action_pressed(GLOBAL.INPUT_MAP["Q"])): 
+			switch_TM_selection(T.TileSelect.TMIndex - 1)
+		elif(event.is_action_pressed(GLOBAL.INPUT_MAP["X"])):
+			switch_tile_selection(T.TileSelect.listIndex + 1)
+		elif(event.is_action_pressed(GLOBAL.INPUT_MAP["Z"])): 
+			switch_tile_selection(T.TileSelect.listIndex - 1)
+		elif(event.is_action_pressed(GLOBAL.INPUT_MAP["-"])):
 			change_elevation(-1)
-		elif(event.is_action_pressed(GLOBAL.INPUT.MAP["="])):
+		elif(event.is_action_pressed(GLOBAL.INPUT_MAP["="])):
 			change_elevation(1)
-		elif(event.is_action_pressed(GLOBAL.INPUT.MAP["F"])):
+		elif(event.is_action_pressed(GLOBAL.INPUT_MAP["F"])):
 			StateMaster.set_state(Caller.FLTR_STATE.get_name())
-		elif(event.is_action_pressed(GLOBAL.INPUT.MAP["LCtrl"])):
+		elif(event.is_action_pressed(GLOBAL.INPUT_MAP["LCtrl"])):
 			StateMaster.set_state(Caller.SAVE_STATE.get_name())
-		elif(event.is_action_pressed(GLOBAL.INPUT.MAP["LAlt"])):
+		elif(event.is_action_pressed(GLOBAL.INPUT_MAP["LAlt"])):
 			StateMaster.set_state(Caller.LOAD_STATE.get_name())
-		elif(event.is_action_pressed(GLOBAL.INPUT.MAP["G"])):
+		elif(event.is_action_pressed(GLOBAL.INPUT_MAP["G"])):
 			StateMaster.set_state(Caller.GOTO_STATE.get_name())
 	
 	func switch_TM_selection(value:int) -> void:
-		TileSelect.TMIndex = value
-		if(TileSelect.TMIndex > (TileSelect.allTileMaps.size() - 1)): 
-			TileSelect.TMIndex = 0
-		if(TileSelect.TMIndex < 0): 
-			TileSelect.TMIndex = (TileSelect.allTileMaps.size() - 1)
+		T.TileSelect.TMIndex = value
+		if(T.TileSelect.TMIndex > (T.TileSelect.allTileMaps.size() - 1)): 
+			T.TileSelect.TMIndex = 0
+		if(T.TileSelect.TMIndex < 0): 
+			T.TileSelect.TMIndex = (T.TileSelect.allTileMaps.size() - 1)
 		
-		TileSelect.listIndex = 0
+		T.TileSelect.listIndex = 0
 		fill_item_list()
 		
-		UIElement.TMSelect.select(TileSelect.TMIndex)
-		switch_tile_selection(TileSelect.listIndex)
+		T.UIElement.TMSelect.select(T.TileSelect.TMIndex)
+		switch_tile_selection(T.TileSelect.listIndex)
 	
 	func switch_tile_selection(value:int) -> void:
-		TileSelect.listIndex = value
-		if(TileSelect.listIndex > (UIElement.TileList.get_item_count() - 1)): 
-			TileSelect.listIndex = 0
-		if(TileSelect.listIndex < 0): 
-			TileSelect.listIndex = (UIElement.TileList.get_item_count() - 1)
+		T.TileSelect.listIndex = value
+		if(T.TileSelect.listIndex > (T.UIElement.TileList.get_item_count() - 1)): 
+			T.TileSelect.listIndex = 0
+		if(T.TileSelect.listIndex < 0): 
+			T.TileSelect.listIndex = (T.UIElement.TileList.get_item_count() - 1)
 		
-		UIElement.TileList.select(TileSelect.listIndex)
+		T.UIElement.TileList.select(T.TileSelect.listIndex)
 	
 	func set_selected_tile(tileID:int) -> void:
-		var tileMap:TileMap = TileSelect.allTileMaps[TileSelect.TMIndex]
+		var tileMap:TileMap = T.TileSelect.allTileMaps[T.TileSelect.TMIndex]
 		var mousePos:Vector2 = tileMap.world_to_map(Caller.get_global_mouse_position())
 		var posV3:Vector3 = LibK.Vectors.vec2_vec3(mousePos, Cam.currentElevation)
 		var chunkV3:Vector3 = LibK.Vectors.vec2_vec3(
@@ -231,37 +236,35 @@ class NORM_STATE extends SMState:
 		var TMName = tileMap.get_name()
 		
 		if(tileID == -1):
-			EditedMap.remove_tile_from_TileData(TMName,posV3)
+			T.EditedMap.remove_tile_from_TileData(TMName,posV3)
 		else:
-			if(not EditedMap.add_tile_to_TileData_on(posV3, TMName, tileID)):
+			if(not T.EditedMap.add_tile_to_TileData_on(posV3, TMName, tileID)):
 				Logger.logErr(["Failed to set tile: ", [posV3, TMName, tileID]], get_stack())
-		TileMapManager.refresh_tile_on(posV3, EditedMap.get_TileData_on(posV3))
+		TileMapManager.refresh_tile_on(posV3, T.EditedMap.get_TileData_on(posV3))
 	
 	func change_elevation(direction:int) -> void:
 		Cam.currentElevation += direction
-		UIElement.ElevationLabel.text = "Elevation: " + str(Cam.currentElevation)
+		T.UIElement.ElevationLabel.text = "Elevation: " + str(Cam.currentElevation)
 		TileMapManager.unload_all_chunks()
 
 	# Fills item list with TileMap tiles
 	func fill_item_list() -> void:
-		UIElement.TileList.clear()
-		TileSelect.shownTiles.clear()
+		T.UIElement.TileList.clear()
+		T.TileSelect.shownTiles.clear()
 		
-		var tileMap:TileMap = TileSelect.allTileMaps[TileSelect.TMIndex]
-		for packed in TileSelect.tileData[TileSelect.TMIndex]:
+		var tileMap:TileMap = T.TileSelect.allTileMaps[T.TileSelect.TMIndex]
+		for packed in T.TileSelect.tileData[T.TileSelect.TMIndex]:
 			var tileName:String = packed[0]
 			var tileID:int = packed[1]
 			var tileTexture:Texture = LibK.TS.get_tile_texture(tileID, tileMap.tile_set)
 
-			if(TileSelect.filter != ""):
-				if(not TileSelect.filter.to_lower() in tileName.to_lower()): 
+			if(T.TileSelect.filter != ""):
+				if(not T.TileSelect.filter.to_lower() in tileName.to_lower()): 
 					continue
-			UIElement.TileList.add_item(tileName,tileTexture,true)
-			TileSelect.shownTiles.append([tileName,tileID])
+			T.UIElement.TileList.add_item(tileName,tileTexture,true)
+			T.TileSelect.shownTiles.append([tileName,tileID])
 
 class FLTR_STATE extends SMState:
-	var UIElement:Dictionary
-	
 	func _init(caller:Node2D).(caller) -> void:
 		pass
 
@@ -269,16 +272,22 @@ class FLTR_STATE extends SMState:
 		return "FLTR_STATE"
 	
 	func _state_set() -> void:
-		Caller._show_lineEdit("addingFilter", UIElement.FilterEdit)
+		Caller._show_lineEdit(Caller.UIElement.FilterEdit)
+	
+	func change_filter(new_text:String) -> void:
+		Caller.TileSelect.filter = new_text
+		Caller.UIElement.Filter.text = "Filter: " + "\"" + Caller.TileSelect.filter + "\""
+	
+	func end_state() -> void:
+		Caller._hide_lineEdit(Caller.UIElement.FilterEdit)
+		StateMaster.set_default_state()
 	
 	func update_input(event:InputEvent) -> void:
-		if(event.is_action_pressed(GLOBAL.INPUT.MAP["ESC"])):
-			Caller._hide_lineEdit("addingFilter", UIElement.FilterEdit)
-			StateMaster.set_default_state()
+		if(event.is_action_pressed(GLOBAL.INPUT_MAP["ESC"])):
+			end_state()
+			
 
 class SAVE_STATE extends SMState:
-	var UIElement:Dictionary
-
 	func _init(caller:Node).(caller) -> void:
 		pass
 
@@ -286,16 +295,21 @@ class SAVE_STATE extends SMState:
 		return "SAVE_STATE"
 	
 	func _state_set() -> void:
-		Caller._show_lineEdit("isSaving", UIElement.SaveEdit)
+		Caller._show_lineEdit(Caller.UIElement.SaveEdit)
+	
+	func save_map(mapName:String) -> void:
+		if(not Caller.EditedMap.save(SaveManager.MAP_FOLDER + mapName + ".db")):
+			Logger.logErr(["Failed to save: ", mapName], get_stack())
+	
+	func end_state() -> void:
+		Caller._hide_lineEdit(Caller.UIElement.SaveEdit)
+		StateMaster.set_default_state()
 	
 	func update_input(event:InputEvent) -> void:
-		if(event.is_action_pressed(GLOBAL.INPUT.MAP["ESC"])):
-			Caller._hide_lineEdit("isSaving", UIElement.SaveEdit)
-			StateMaster.set_default_state()
+		if(event.is_action_pressed(GLOBAL.INPUT_MAP["ESC"])):
+			end_state()
 
 class LOAD_STATE extends SMState:
-	var UIElement:Dictionary
-	
 	func _init(caller:Node2D).(caller) -> void:
 		pass
 
@@ -303,16 +317,25 @@ class LOAD_STATE extends SMState:
 		return "LOAD_STATE"
 	
 	func _state_set() -> void:
-		Caller._show_lineEdit("isLoading", UIElement.LoadEdit)
+		Caller._show_lineEdit(Caller.UIElement.LoadEdit)
+	
+	func load_map(mapName:String) -> void:
+		var Temp := SQLSave.new(mapName, SaveManager.MAP_FOLDER)
+		if(Temp.load(Caller.TileSelect.allTileMaps)):
+			Caller.EditedMap = Temp
+		else:
+			Logger.logErr(["Failed to load: ", mapName], get_stack())
+	
+	func end_state() -> void:
+		Caller.get_node("TileMapManager").unload_all_chunks()
+		Caller._hide_lineEdit(Caller.UIElement.LoadEdit)
+		StateMaster.set_default_state()
 	
 	func update_input(event:InputEvent) -> void:
-		if(event.is_action_pressed(GLOBAL.INPUT.MAP["ESC"])):
-			Caller._hide_lineEdit("isLoading", UIElement.LoadEdit)
-			StateMaster.set_default_state()
+		if(event.is_action_pressed(GLOBAL.INPUT_MAP["ESC"])):
+			end_state()
 
 class GOTO_STATE extends SMState:
-	var UIElement:Dictionary
-	
 	func _init(caller:Node2D).(caller) -> void:
 		pass
 
@@ -320,55 +343,54 @@ class GOTO_STATE extends SMState:
 		return "GOTO_STATE"
 
 	func _state_set() -> void:
-		Caller._show_lineEdit("goto", UIElement.GotoEdit)
+		Caller._show_lineEdit(Caller.UIElement.GotoEdit)
+	
+	func change_coords(new_text:String = "NOFILTER") -> void:
+		if(new_text == "NOFILTER"): return
+
+		var coords:Array = new_text.split(" ")
+		if(not coords.size() >= 2): return
+		if(not coords[0].is_valid_integer() and coords[1].is_valid_integer()):
+			return
+		
+		Caller.get_node("Cam").global_position = Vector2(
+			int(coords[0]) * GLOBAL.TILEMAPS.BASE_SCALE,
+			int(coords[1]) * GLOBAL.TILEMAPS.BASE_SCALE)
+	
+	func end_state() -> void:
+		Caller._hide_lineEdit(Caller.UIElement.GotoEdit)
+		StateMaster.set_default_state()
 	
 	func update_input(event:InputEvent) -> void:
-		if(event.is_action_pressed(GLOBAL.INPUT.MAP["ESC"])):
-			Caller._hide_lineEdit("goto", UIElement.GotoEdit)
-			StateMaster.set_default_state()
+		if(event.is_action_pressed(GLOBAL.INPUT_MAP["ESC"])):
+			end_state()
 
 ### ----------------------------------------------------
 # Signals
 ### ----------------------------------------------------
 
 func _on_ItemList_item_selected(index:int) -> void:
-	EditorStateMachine.redirect_signal("TM_STATE", "switch_tile_selection", [index])
+	EditorStateMachine.force_call(NORM_STATE.get_name(), "switch_tile_selection", [index])
 
 func _on_TMSelect_item_selected(index:int) -> void:
-	EditorStateMachine.redirect_signal("TM_STATE", "switch_TM_selection", [index])
+	EditorStateMachine.force_call(NORM_STATE.get_name(), "switch_TM_selection", [index])
 
 func _on_Filter_text_entered(new_text: String) -> void:
-	TileSelect.filter = new_text
-	_hide_lineEdit(UIElement.FilterEdit)
-	UIElement.Filter.text = "Filter: " + "\"" + TileSelect.filter + "\""
-	EditorStateMachine.force_call("TM_STATE", "switch_TM_selection", [0])
+	EditorStateMachine.redirect_signal(FLTR_STATE.get_name(), "change_filter", [new_text])
+	EditorStateMachine.redirect_signal(FLTR_STATE.get_name(), "end_state", [])
 
 func _on_SaveEdit_text_entered(mapName:String) -> void:
-	if(not EditedMap.save(SaveManager.MAP_FOLDER + mapName + ".db")):
-		Logger.logErr(["Failed to save: ", mapName], get_stack())
-	_hide_lineEdit(UIElement.SaveEdit)
+	EditorStateMachine.redirect_signal(SAVE_STATE.get_name(), "save_map", [mapName])
+	EditorStateMachine.redirect_signal(SAVE_STATE.get_name(), "end_state", [])
 
-func _on_LoadEdit_text_entered(MapName: String) -> void:
-	var Temp := SQLSave.new(MapName, SaveManager.MAP_FOLDER)
-	if(Temp.load(TileSelect.allTileMaps)):
-		EditedMap = Temp
-	else:
-		Logger.logErr(["Failed to load: ", MapName], get_stack())
-	
-	$TileMapManager.unload_all_chunks()
-	_hide_lineEdit(UIElement.LoadEdit)
+func _on_LoadEdit_text_entered(mapName:String) -> void:
+	EditorStateMachine.redirect_signal(LOAD_STATE.get_name(), "load_map", [mapName])
+	EditorStateMachine.redirect_signal(LOAD_STATE.get_name(), "end_state", [])
 
-func _on_GOTO_text_entered(new_text: String) -> void:
-	var coords:Array = new_text.split(" ")
-	if(not coords.size() >= 2): return
-	if(not coords[0].is_valid_integer() and coords[1].is_valid_integer()):
-		return
+func _on_GOTO_text_entered(new_text:String) -> void:
+	EditorStateMachine.redirect_signal(GOTO_STATE.get_name(), "change_coords", [new_text])
+	EditorStateMachine.redirect_signal(GOTO_STATE.get_name(), "end_state", [])
 	
-	var x:int = int(coords[0]) * GLOBAL.TILEMAPS.BASE_SCALE
-	var y:int = int(coords[1]) * GLOBAL.TILEMAPS.BASE_SCALE
-	$Cam.global_position = Vector2(x,y)
-	
-	_hide_lineEdit(UIElement.GotoEdit)
 
 ### ----------------------------------------------------
 # Update chunks
