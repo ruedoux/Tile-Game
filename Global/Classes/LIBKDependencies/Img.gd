@@ -12,7 +12,7 @@ extends Script
 # Interpolates BG texture with addColor
 # Puts Outline texture on top of interpolated BG texture
 # Returns null on failure
-static func blend_textures(textureBG:Texture, textureOutline:Texture, addColor:Color, weight:float) -> Texture:
+static func stack_textures(textureBG:Texture, textureOutline:Texture, addColor:Color, weight:float) -> Texture:
     var texture:ImageTexture = ImageTexture.new()
     if(not textureBG.get_size() == textureOutline.get_size()):
         push_error("Texture outline and bg must be same size: "+str(textureBG.get_size())+" "+str(textureOutline.get_size()))

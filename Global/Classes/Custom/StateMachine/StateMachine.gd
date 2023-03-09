@@ -88,7 +88,6 @@ func redirect_signal(StateName:String, functionName:String, argArr:Array):
 	return funcref(CurrentState, functionName).call_funcv(argArr)
 
 # Calls function of a given state regardless if its a current state
-# Returns null on error
 func force_call(StateName:String, functionName:String, argArr:Array):
 	if(not StateTable.has(StateName)):
 		Logger.logErr(["State not in StateTable, add it first with add_state(), ", StateName], get_stack())

@@ -111,7 +111,7 @@ static func _add_tile_type(tileSet:TileSet, data:Dictionary, tileType:String, lo
 		
 		for M_TYPE in GLOBAL.MATERIALS.TYPES.values():
 			var M_COLOR:Color = GLOBAL.MATERIALS.DB[M_TYPE]["Color"]
-			var texture:Texture = LibK.Img.blend_textures(textureBG, textureOutline, M_COLOR, 0.5)
+			var texture:Texture = LibK.Img.stack_textures(textureBG, textureOutline, M_COLOR, 0.5)
 			var tileName:String = GLOBAL.MATERIALS.TYPES.keys()[M_TYPE] + setName + GLOBAL.MATERIALS.GENERATED_TAG
 			var tileMode:int = TileSet.SINGLE_TILE
 			if tileType == "Autotile": tileMode = TileSet.AUTO_TILE

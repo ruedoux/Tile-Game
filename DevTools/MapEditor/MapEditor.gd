@@ -38,7 +38,7 @@ onready var UIElement := {
 	Filter =         $UIElements/MC/GC/Info/Filter,
 }
 
-var EditorStateMachine := StateMachine.new(true)
+var EditorStateMachine := StateMachine.new(false)
 
 var inputActive := true
 

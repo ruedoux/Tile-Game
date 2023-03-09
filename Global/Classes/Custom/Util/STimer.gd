@@ -18,6 +18,8 @@ var startTime:int
 func _init() -> void:
 	startTime = Time.get_ticks_msec()
 
+func reset() -> void:
+	startTime = Time.get_ticks_msec()
 
 func get_result():
 	return (Time.get_ticks_msec() - startTime)
