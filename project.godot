@@ -73,6 +73,11 @@ _global_script_classes=[ {
 "class": "TileData",
 "language": "GDScript",
 "path": "res://Global/Classes/Custom/DataTypes/TileData.gd"
+}, {
+"base": "Script",
+"class": "VisionCast",
+"language": "GDScript",
+"path": "res://Global/Classes/Custom/VisionCast/VisionCast.gd"
 } ]
 _global_script_class_icons={
 "DataType": "",
@@ -87,7 +92,8 @@ _global_script_class_icons={
 "SQLiteWrapper": "",
 "STimer": "",
 "StateMachine": "",
-"TileData": ""
+"TileData": "",
+"VisionCast": ""
 }
 
 [application]

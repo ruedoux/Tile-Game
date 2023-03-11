@@ -23,7 +23,7 @@ func _init(tsdict:Dictionary = {}, eData:String = "") -> void:
 	IDDict = tsdict
 	EntityData = eData
 
-func add_to_IDDict(TSName:String, tileID:int = -1) -> void:
+func add_to_IDDict(TSName:String, tileID:int) -> void:
 	if(not IDDict.has(TSName)): IDDict[TSName] = {}
 	IDDict[TSName] = tileID
 
