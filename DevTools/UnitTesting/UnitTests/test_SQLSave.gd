@@ -7,7 +7,7 @@ extends GutTestLOG
 # VARIABLES
 ### ----------------------------------------------------
 
-const _TMM = preload("res://Scenes/MapManager/TileMapManager/TileMapManager.tscn")
+const _TMM = preload("res://Scenes/GameMaster//MapManager/TileMapManager/TileMapManager.tscn")
 var TileMapManager:Node = null
 
 const SAV_FOLDER := "res://Temp/"

@@ -8,7 +8,7 @@ extends GutTestLOG
 ### ----------------------------------------------------
 
 const SAVE_NAME = "UnitTest"
-const _MM = preload("res://Scenes/MapManager/MapManager.tscn")
+const _MM = preload("res://Scenes/GameMaster/MapManager/MapManager.tscn")
 var MapManager:Node = null
 
 ### ----------------------------------------------------
