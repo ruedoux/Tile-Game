@@ -2,7 +2,7 @@
 
 [ext_resource path="res://DevTools/MapEditor/MapEditor.gd" type="Script" id=1]
 [ext_resource path="res://DevTools/MapEditor/Cam/Cam.gd" type="Script" id=2]
-[ext_resource path="res://Scenes/MapManager/TileMapManager/TileMapManager.tscn" type="PackedScene" id=3]
+[ext_resource path="res://Scenes/GameMaster/MapManager/TileMapManager/TileMapManager.tscn" type="PackedScene" id=3]
 [ext_resource path="res://DevTools/MapEditor/Procedural/Procedural.gd" type="Script" id=4]
 [ext_resource path="res://Resources/Themes/MapEditor.tres" type="Theme" id=5]
 

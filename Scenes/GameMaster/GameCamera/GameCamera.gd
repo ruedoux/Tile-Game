@@ -1,9 +1,8 @@
 ### ----------------------------------------------------
-### Player data class
+### Controls camera
 ### ----------------------------------------------------
 
-extends GameEntity
-class_name PlayerEntity
+extends Camera2D
 
 ### ----------------------------------------------------
 # VARIABLES
@@ -12,7 +11,3 @@ class_name PlayerEntity
 ### ----------------------------------------------------
 # FUNCTIONS
 ### ----------------------------------------------------
-
-# Saves this entity
-func save_entity() -> bool:
-	return SaveManager.set_PlayerEntity(self)

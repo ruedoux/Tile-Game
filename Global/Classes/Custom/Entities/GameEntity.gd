@@ -33,6 +33,7 @@ func _on_entity_ready() -> void:
 func set_sprite(spritePos:Vector2, texturePath:String) -> void:
 	var setTexture:Texture = ResourceLoader.load(texturePath, "Texture")
 	texture = LibK.Img.get_sprite_from_texture(spritePos, GLOBAL.TILEMAPS.TILE_SIZE, setTexture)
+	offset = GLOBAL.TILEMAPS.TILE_SIZE/2
 
 # Unloads itself into TileData and queue_free()
 func unload_entity(unloadedChunkV3:Vector3) -> void:
