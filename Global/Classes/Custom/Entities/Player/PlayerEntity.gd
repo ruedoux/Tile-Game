@@ -9,9 +9,21 @@ class_name PlayerEntity
 # VARIABLES
 ### ----------------------------------------------------
 
+var PlayerStateMachine := StateMachine.new()
+var Movement := PlayerMove.new(self)
+
 ### ----------------------------------------------------
 # FUNCTIONS
 ### ----------------------------------------------------
+
+func _on_entity_ready() -> void:
+	set_sprite(TexturePos, GLOBAL.TEXTURES.ENTITY_SET_PATH)
+	PlayerStateMachine.add_state(Movement)
+	PlayerStateMachine.set_state(Movement)
+	PlayerStateMachine.add_default_state(Movement)
+
+func _input(event:InputEvent) -> void:
+	PlayerStateMachine.update_state_input(event)
 
 # Saves this entity
 func save_entity() -> bool:

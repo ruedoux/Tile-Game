@@ -66,7 +66,7 @@ func logErr(message:Array, frame:Array) -> void:
 static func _format_LOG(message:Array) -> String:
 	var output:String = ""
 	for part in message:
-		part = String(part)
+		part = str(part)
 		
 		# Modifiers to log
 		if "[B]" in part: 
@@ -77,3 +77,19 @@ static func _format_LOG(message:Array) -> String:
 			output = output.insert(5,"	")
 		output += part
 	return output
+
+
+# Tries to execute a method, if fails pushes an error
+func try_execute(methodReturn, expectedOK, errMSG:String = "Generic error") -> bool:
+	if(methodReturn != expectedOK):
+		logErr([errMSG, " | ", "Expected: ", str(expectedOK), ", Got: ", methodReturn], [])
+		return false
+	return true
+
+# Tries to execute a method that returns an error code, if fails pushes an error
+func try_execute_err(errCode:int, errMSG:String = "Generic error") -> bool:
+	if(errCode != OK):
+		logErr([errMSG, " | ", "Error: ", errCode], [])
+		return false
+	return true
+

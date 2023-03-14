@@ -14,7 +14,7 @@ extends Node2D
 # VARIABLES
 ### ----------------------------------------------------
 
-onready var TileSelect := {
+var TileSelect := {
 	filter = "",			# Item filter keyword
 	allTileMaps = [],		# List of all tilemaps
 	tileData = [],			# Data regarding tiles (same order as all tilemaps)
@@ -38,7 +38,12 @@ onready var UIElement := {
 	Filter =         $UIElements/MC/GC/Info/Filter,
 }
 
-var EditorStateMachine := StateMachine.new(false)
+var EditorStateMachine := StateMachine.new()
+onready var NormalState := NORM_STATE.new(self)
+onready var FilterState := FLTR_STATE.new(self)
+onready var SaveState := SAVE_STATE.new(self)
+onready var LoadState := LOAD_STATE.new(self)
+onready var GoToState := GOTO_STATE.new(self)
 
 var inputActive := true
 
@@ -51,19 +56,19 @@ var EditedMap:SQLSave
 
 func _ready() -> void:
 	var isOK := true
-	EditorStateMachine.add_state(NORM_STATE.new(self))
-	EditorStateMachine.add_state(FLTR_STATE.new(self))
-	EditorStateMachine.add_state(SAVE_STATE.new(self))
-	EditorStateMachine.add_state(LOAD_STATE.new(self))
-	EditorStateMachine.add_state(GOTO_STATE.new(self))
-	isOK = isOK and EditorStateMachine.set_state(NORM_STATE.get_name())
-	isOK = isOK and EditorStateMachine.add_default_state(NORM_STATE.get_name())
+	EditorStateMachine.add_state(NormalState)
+	EditorStateMachine.add_state(FilterState)
+	EditorStateMachine.add_state(SaveState)
+	EditorStateMachine.add_state(LoadState)
+	EditorStateMachine.add_state(GoToState)
+	isOK = isOK and EditorStateMachine.set_state(NormalState)
+	isOK = isOK and EditorStateMachine.add_default_state(NormalState)
 	if(not isOK):
 		push_error("Failed to init EditorStateMachine")
 		get_tree().quit()
 	
 	VisualServer.set_default_clear_color(Color.darkslateblue)
-	TileSelect.allTileMaps = $TileMapManager.get_tilemaps()
+	TileSelect.allTileMaps = $TileMapManager.TileMaps
 	
 	EditedMap = SQLSave.new(EDITOR_SAVE_NAME, SaveManager.MAP_FOLDER)
 	if(not EditedMap.create_new_save(TileSelect.allTileMaps)):
@@ -75,8 +80,7 @@ func _ready() -> void:
 	
 	_init_TM_selection()
 	_init_tile_select()
-	
-	if(EditorStateMachine.force_call(NORM_STATE.get_name(), "switch_TM_selection", [0]) == StateMachine.ERROR):
+	if(EditorStateMachine.force_call(NormalState, "switch_TM_selection", [0]) == StateMachine.ERROR):
 		push_error("Failed to init EditorStateMachine")
 		get_tree().quit()
 
@@ -370,26 +374,26 @@ class GOTO_STATE extends SMState:
 ### ----------------------------------------------------
 
 func _on_ItemList_item_selected(index:int) -> void:
-	EditorStateMachine.force_call(NORM_STATE.get_name(), "switch_tile_selection", [index])
+	EditorStateMachine.force_call(NormalState, "switch_tile_selection", [index])
 
 func _on_TMSelect_item_selected(index:int) -> void:
-	EditorStateMachine.force_call(NORM_STATE.get_name(), "switch_TM_selection", [index])
+	EditorStateMachine.force_call(NormalState, "switch_TM_selection", [index])
 
 func _on_Filter_text_entered(new_text: String) -> void:
-	EditorStateMachine.redirect_signal(FLTR_STATE.get_name(), "change_filter", [new_text])
-	EditorStateMachine.redirect_signal(FLTR_STATE.get_name(), "end_state", [])
+	EditorStateMachine.redirect_signal(FilterState, "change_filter", [new_text])
+	EditorStateMachine.redirect_signal(FilterState, "end_state", [])
 
 func _on_SaveEdit_text_entered(mapName:String) -> void:
-	EditorStateMachine.redirect_signal(SAVE_STATE.get_name(), "save_map", [mapName])
-	EditorStateMachine.redirect_signal(SAVE_STATE.get_name(), "end_state", [])
+	EditorStateMachine.redirect_signal(SaveState, "save_map", [mapName])
+	EditorStateMachine.redirect_signal(SaveState, "end_state", [])
 
 func _on_LoadEdit_text_entered(mapName:String) -> void:
-	EditorStateMachine.redirect_signal(LOAD_STATE.get_name(), "load_map", [mapName])
-	EditorStateMachine.redirect_signal(LOAD_STATE.get_name(), "end_state", [])
+	EditorStateMachine.redirect_signal(LoadState, "load_map", [mapName])
+	EditorStateMachine.redirect_signal(LoadState, "end_state", [])
 
 func _on_GOTO_text_entered(new_text:String) -> void:
-	EditorStateMachine.redirect_signal(GOTO_STATE.get_name(), "change_coords", [new_text])
-	EditorStateMachine.redirect_signal(GOTO_STATE.get_name(), "end_state", [])
+	EditorStateMachine.redirect_signal(GoToState, "change_coords", [new_text])
+	EditorStateMachine.redirect_signal(GoToState, "end_state", [])
 	
 
 ### ----------------------------------------------------

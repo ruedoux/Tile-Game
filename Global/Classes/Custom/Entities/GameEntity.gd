@@ -9,6 +9,9 @@ class_name GameEntity
 # VARIABLES
 ### ----------------------------------------------------
 
+# List of property names that are meant to be saved
+const PROPERTY_TO_SAVE = ["MapPosition"]
+
 # Position on the game map
 var MapPosition := Vector3(0,0,0) setget _set_MapPosition
 func _set_MapPosition(posV3:Vector3):
@@ -62,14 +65,14 @@ func _to_string() -> String:
 # Converts entity data to an array
 func to_array() -> Array:
 	var arr := []
-	for propertyInfo in get_script().get_script_property_list():
-		arr.append(get(propertyInfo.name))
+	for propertyName in PROPERTY_TO_SAVE:
+		arr.append(get(propertyName))
 	return arr
 
 # Creates copy of entity data as Array
 func from_array(arr:Array):
 	var index := 0
-	for propertyInfo in get_script().get_script_property_list():
-		set(propertyInfo.name, arr[index])
+	for propertyName in PROPERTY_TO_SAVE:
+		set(propertyName, arr[index])
 		index+=1
 	return self

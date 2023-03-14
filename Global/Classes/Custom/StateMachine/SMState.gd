@@ -32,15 +32,17 @@ func _state_set() -> void:
 func end_state() -> void:
 	StateMaster.set_default_state()
 
-# Returns name of a state, needs to be overwriten
+# Returns name of a state
 static func get_name() -> String:
-	Logger.logErr(["Function should be overwriten! "], get_stack())
-	return "Not Setup"
+	return "Unnamed State"
 
 # For physics process
-func update_delta(_delta:float):
+func update_delta(_delta:float) -> void:
 	Logger.logErr(["Function should be overwriten! "], get_stack())
 
 # For input event
-func update_input(_event:InputEvent):
+func update_input(_event:InputEvent) -> void:
 	Logger.logErr(["Function should be overwriten! "], get_stack())
+
+func _to_string() -> String:
+	return get_name()

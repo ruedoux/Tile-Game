@@ -11,3 +11,7 @@ extends Camera2D
 ### ----------------------------------------------------
 # FUNCTIONS
 ### ----------------------------------------------------
+
+func _on_PlayerMoved(pos:Vector2) -> void:
+	self.position = pos
+	

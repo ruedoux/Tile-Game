@@ -42,7 +42,12 @@ _global_script_classes=[ {
 "base": "GameEntity",
 "class": "PlayerEntity",
 "language": "GDScript",
-"path": "res://Global/Classes/Custom/Entities/PlayerEntity.gd"
+"path": "res://Global/Classes/Custom/Entities/Player/PlayerEntity.gd"
+}, {
+"base": "SMState",
+"class": "PlayerMove",
+"language": "GDScript",
+"path": "res://Global/Classes/Custom/Entities/Player/States/PlayerMove.gd"
 }, {
 "base": "Reference",
 "class": "SMState",
@@ -87,6 +92,7 @@ _global_script_class_icons={
 "GutTestLOG": "",
 "LibK": "",
 "PlayerEntity": "",
+"PlayerMove": "",
 "SMState": "",
 "SQLSave": "",
 "SQLiteWrapper": "",

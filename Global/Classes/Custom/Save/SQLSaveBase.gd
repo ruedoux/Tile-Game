@@ -106,15 +106,16 @@ func create_new_save(TileMaps:Array) -> bool:
 	if(result != OK):
 		Logger.logErr(["Unable to create empty save file: ", DEST_PATH, ", err: ", result], get_stack())
 		return false
-	
+
 	SQL_DB_GLOBAL.path = DEST_PATH # Save everything in destination instead of temp file
 	var isOK := true
 	for TID in TABLE_NAMES.values():
 		var tableName:String = TABLE_NAMES.keys()[TID]
 		isOK = isOK and add_table(tableName, TABLE_CONTENT)
+	
 	fill_GAMEDATA_TABLE(TileMaps)
 	SQL_DB_GLOBAL.path = TEMP_PATH
-	
+
 	if(not isOK): Logger.logErr(["Failed to create tables: ", DEST_PATH], get_stack())
 	elif(isOK):   Logger.logMS(["Created DataBase at: ", DEST_PATH])
 	return isOK

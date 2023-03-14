@@ -24,6 +24,16 @@ var LoadedChunks:Array = [] # [ Vector3, ... ]
 # FUNCTIONS
 ### ----------------------------------------------------
 
+
+# Connects all signals
+func connect_signals() -> bool:
+	var isOK := true
+	isOK = isOK and Logger.try_execute_err(
+		$EntityManager.PlayerRef.Movement.connect("PlayerMoved", $GameCamera, "_on_PlayerMoved"),
+		"Failed to connect signals (PlayerMoved, $GameCamera, _on_PlayerMoved)"
+	)
+	return isOK
+
 # Starts and initializes a given game save
 func start_simulation(SaveName:String, MapName:String) -> bool:
 	if(not SaveManager.load_sav(SaveName, MapName, $TileMapManager.TileMaps)):
@@ -34,6 +44,13 @@ func start_simulation(SaveName:String, MapName:String) -> bool:
 	$EntityManager.load_player(Player)
 	GameFocusEntity = Player
 	SimulatedEntities.append(Player)
+
+	if(not connect_signals()):
+		Logger.logErr(["Failed to connect signals"], get_stack())
+		return false
+	
+	$GameCamera.current = true
+
 	update_simulation()
 	return true
 

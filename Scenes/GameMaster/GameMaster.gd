@@ -11,6 +11,7 @@ extends Node
 # FUNCTIONS
 ### ----------------------------------------------------
 
+
 func create_new_save() -> bool:
 	if(not SaveManager.create_empty_save("test", SaveManager.SAV_FOLDER, $MapManager/TileMapManager.TileMaps)):
 		Logger.logErr(["Failed to create_new_save"], get_stack())
@@ -22,8 +23,6 @@ func start_game():
 	if(not $MapManager.start_simulation("test", "test")):
 		push_error("Failed to init")
 		get_tree().quit()
-	
-	$GameCamera.current = true
 
 func _ready() -> void:
 	start_game()
