@@ -98,7 +98,7 @@ func _sql_load_compressed(tableName:String, KeyVar) -> String:
 # If save already exists, create a new one and put old one in the trash
 func create_new_save(TileMaps:Array) -> bool:
 	if(LibK.Files.file_exist(DEST_PATH)):
-		if(OS.move_to_trash(ProjectSettings.globalize_path(DEST_PATH)) != OK):
+		if(LibK.Files.delete_file(DEST_PATH) != OK):
 			Logger.logErr(["Unable to delete save file: ", DEST_PATH], get_stack())
 			return false
 

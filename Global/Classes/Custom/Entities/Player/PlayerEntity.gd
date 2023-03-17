@@ -25,6 +25,9 @@ func _on_entity_ready() -> void:
 func _input(event:InputEvent) -> void:
 	PlayerStateMachine.update_state_input(event)
 
+func _physics_process(delta: float) -> void:
+	PlayerStateMachine.update_state_delta(delta)
+
 # Saves this entity
 func save_entity() -> bool:
 	return SaveManager.set_PlayerEntity(self)
