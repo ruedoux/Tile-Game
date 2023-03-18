@@ -22,8 +22,7 @@ var beVerbose:bool        # For debug purposes
 # Flag, is false if save is not properly initialized
 var isReadyNoErr := false
 
-const MAPDATA_CHUNK_SIZE = 64 # Size of SQLite data chunk
-const SQL_CT_UNLOAD_NUM = 128 # Unload chunk if data wasnt requested for 128 updates (max loaded chunks number)
+const SQL_CHUNK_SIZE = 64 # Size of SQLite data chunk
 
 # Names of all tables that need to be created
 enum TABLE_NAMES {GAMEDATA_TABLE, MAPDATA_TABLE}
@@ -140,6 +139,9 @@ func _get_dict_from_table(tableName:String, keyVar) -> Dictionary:
 	if(not tempVar is Dictionary):
 		return Dictionary()
 	return tempVar
+
+static func pos_to_SQLChunk(posV3:Vector3) -> Vector2:
+	return Vector2(posV3.x/SQL_CHUNK_SIZE, posV3.y/SQL_CHUNK_SIZE).floor()
 
 ### ----------------------------------------------------
 # Queries, these are not meant to be used where speed matters (open and close db in every function which is slow)

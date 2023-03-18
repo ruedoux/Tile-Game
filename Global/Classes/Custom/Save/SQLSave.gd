@@ -1,7 +1,7 @@
 ### ----------------------------------------------------
 # Manages SQLite
 #
-# Data is saved to chunks of size MAPDATA_CHUNK_SIZE which are compressed
+# Data is saved to chunks of size SQL_CHUNK_SIZE which are compressed
 # Data is loaded whenever data from a given chunk is requested
 # This system will not work well if data is requested from multiple chunks alternately
 # because it would cause the system to load and unload the same data from sql db
@@ -9,7 +9,7 @@
 # To setup a save use create_new_save() and initialize()
 # To load save use only initialize()
 #
-# Before saving use save_to_sqlDB() to unload all data from cache (MapData variable)
+# Before saving use save_to_sqlDB() to unload all data from cache (MapDataCache variable)
 #
 ### ----------------------------------------------------
 
@@ -20,6 +20,9 @@ class_name SQLSave
 # VARIABLES
 ### ----------------------------------------------------
 
+# Unload chunk if data wasnt requested for 128 updates (max loaded chunks number)
+const SQL_CT_UNLOAD_NUM = 128 
+
 # List of loaded chunks from sql to cache variables with their access counter
 # Counter from every chunk is subtracted every time data is loaded
 # This allows to unload long not accessed chunk
@@ -27,8 +30,7 @@ var SQLLoadedChunks := Dictionary() # {ChunkPos:accessCounter, ...}
 
 # Cache of all loaded data from sql
 # Holds map data (not meant to be editet directly!)
-# { posV3:TileData }
-var MapData := Dictionary()
+var MapDataCache := MapData.new()
 
 # Holds TileSet data
 var TS_CONTROL := Dictionary() # { TSName:{tileID:tileName} }
@@ -54,7 +56,7 @@ func load(TileMaps:Array) -> bool:
 		GAMEDATA_KEYS.keys()[GAMEDATA_KEYS.TS_CONTROL])
 	
 	if(TS_CONTROL.empty()):
-		Logger.logErr(["Failed do initialize TS_CONTROL from SQL save, str2var is not Dictionary: ", DEST_PATH], get_stack())
+		Logger.logErr(["Failed do initialize TS_CONTROL from SQL save, TS_CONTROL is empty: ", DEST_PATH], get_stack())
 		return isReadyNoErr
 
 	if(not check_compatible(TileMaps)): 
@@ -105,8 +107,8 @@ func save(savePath:String = "") -> bool:
 			Logger.logErr(["Unable to delete save file: ", savePath], get_stack())
 			return false
 	
-	for chunkV3 in SQLLoadedChunks.keys():
-		_unload_SQLChunk(chunkV3)
+	for chunk in MapDataCache.Data.keys():
+		_unload_SQLChunk(chunk)
 	
 	var result := LibK.Files.copy_file(TEMP_PATH, savePath)
 	if(not result == OK):
@@ -122,7 +124,6 @@ func save(savePath:String = "") -> bool:
 ### ----------------------------------------------------
 # GameData control
 ### ----------------------------------------------------
-
 
 # Returns saved player data from save
 func get_PlayerEntity() -> PlayerEntity:
@@ -140,122 +141,117 @@ func set_PlayerEntity(Player:PlayerEntity) -> bool:
 	return true
 
 ### ----------------------------------------------------
-# MapData control
+# MapDataCache control
 ### ----------------------------------------------------
-
 
 # Sets TileData on a given position (with compatibility check, not meant for bulk)
 func set_TileData_on(posV3:Vector3, tileData:TileData) -> bool:
 	if(not tileData.check_IDDict_compatible(TS_CONTROL)): return false
-	_update_SQLLoadedChunks(LibK.Vectors.scale_down_vec3(posV3, MAPDATA_CHUNK_SIZE))
-	MapData[posV3] = str(tileData)
+	_update_SQLLoadedChunks(pos_to_SQLChunk(posV3))
+	MapDataCache.set_in_Data(pos_to_SQLChunk(posV3), posV3, tileData)
 	return true
 
 # Returns tile on a given position (with compatibility check, not meant for bulk)
 # Returns a new empty tiledata on fail
 func get_TileData_on(posV3:Vector3) -> TileData:
-	_update_SQLLoadedChunks(LibK.Vectors.scale_down_vec3(posV3, MAPDATA_CHUNK_SIZE))
-	if(not MapData.has(posV3)): return TileData.new()
-	return TileData.new().from_str(MapData[posV3])
+	_update_SQLLoadedChunks(pos_to_SQLChunk(posV3))
+	return MapDataCache.get_in_Data(pos_to_SQLChunk(posV3), posV3)
 
 # Removes TileData on a position permamently
 # Retruns true if data was erased
 func remove_TileData_on(posV3:Vector3) -> bool:
-	return MapData.erase(posV3)
+	return MapDataCache.rem_in_Data(pos_to_SQLChunk(posV3), posV3)
 
 # Adds tile to TileData on a given position (with compatibility check, not meant for bulk)
 func add_tile_to_TileData_on(posV3:Vector3, TSName:String, tileID:int) -> bool:
-	if(not TS_CONTROL.has(TSName)): return false
-	if(not TS_CONTROL[TSName].has(tileID)): return false
-	# Get via function to avoid tying to add tile to not existing TileData entry in MapData
+	if(not TS_CONTROL.has(TSName)): 
+		return false
+	if(not TS_CONTROL[TSName].has(tileID)): 
+		return false
 	var editedTD := get_TileData_on(posV3)
 	editedTD.add_to_IDDict(TSName, tileID)
-	MapData[posV3] = str(editedTD)
+	MapDataCache.set_in_Data(pos_to_SQLChunk(posV3), posV3, editedTD)
 	return true
 
 # Removes TSName from TileData IDDict
 # Returns false when data was not erased
 func remove_tile_from_TileData(TSName:String, posV3:Vector3) -> bool:
 	var editedTD := get_TileData_on(posV3)
-	if(editedTD.IDDict.empty()): return false
 	var erased := editedTD.erase_from_IDDict(TSName)
-	MapData[posV3] = str(editedTD)
+	MapDataCache.set_in_Data(pos_to_SQLChunk(posV3), posV3, editedTD)
 	return erased
 
 # Adds entity data on a given position
-func add_Entity_to_TileData(posV3:Vector3, entity:GameEntity) -> bool:
-	# Get via function to avoid tying to add tile to not existing TileData entry in MapData
+func add_Entity_to_TileData(posV3:Vector3, entity:GameEntity) -> void:
 	var editedTD := get_TileData_on(posV3)
 	editedTD.EntityData = str(entity)
-	MapData[posV3] = str(editedTD)
-	return true
+	MapDataCache.set_in_Data(pos_to_SQLChunk(posV3), posV3, editedTD)
 
 # Removes EntytyData from TileData on given position
 # Returns true if EntityData was erased
-func remove_Entity_from_TileData(posV3:Vector3) -> bool:
+func remove_Entity_from_TileData(posV3:Vector3) -> void:
 	var editedTD := get_TileData_on(posV3)
-	if(editedTD.EntityData.empty()): return false
 	editedTD.EntityData = ""
-	MapData[posV3] = str(editedTD)
-	return true
+	MapDataCache.set_in_Data(pos_to_SQLChunk(posV3), posV3, editedTD)
 
-# Get positions in chunk, better optimized for getting a lot of data (no check for every tile)
+# Get positions in one z level chunk, better optimized for getting a lot of data (no check for every tile)
 func get_TileData_on_chunk(chunkPosV3:Vector3, chunkSize:int) -> Dictionary:
-	if(not MAPDATA_CHUNK_SIZE%chunkSize == 0):
-		Logger.logErr(["MAPDATA_CHUNK_SIZE%chunkSize must be 0: ",chunkSize, " ", MAPDATA_CHUNK_SIZE], get_stack())
+	if(not SQL_CHUNK_SIZE%chunkSize == 0):
+		Logger.logErr(["SQL_CHUNK_SIZE%chunkSize must be 0: ",chunkSize, " ", SQL_CHUNK_SIZE], get_stack())
 		return {}
-	if(chunkSize>MAPDATA_CHUNK_SIZE):
-		Logger.logErr(["chunkSize should be lower or equal to MAPDATA_CHUNK_SIZE: ",chunkSize, " ", MAPDATA_CHUNK_SIZE], get_stack())
+	if(chunkSize>SQL_CHUNK_SIZE):
+		Logger.logErr(["chunkSize should be lower or equal to SQL_CHUNK_SIZE: ",chunkSize, " ", SQL_CHUNK_SIZE], get_stack())
 		return {}
 	
-	var resultDict := {}
-	_update_SQLLoadedChunks(LibK.Vectors.scale_down_vec3(chunkPosV3, MAPDATA_CHUNK_SIZE/chunkSize))
-	for posV3 in LibK.Vectors.vec3_get_pos_in_chunk(chunkPosV3,chunkSize):
-		if(not MapData.has(posV3)): continue
-		resultDict[posV3] = TileData.new().from_str(MapData[posV3])
-	return resultDict
+	var ChunkPos := LibK.Vectors.vec3_vec2(LibK.Vectors.scale_down_vec3(chunkPosV3, SQL_CHUNK_SIZE/chunkSize))
+	_update_SQLLoadedChunks(ChunkPos)
+
+	var returnDict := {}
+	if(not MapDataCache.Data.has(ChunkPos)):
+		return returnDict
+
+	var DictRef:Dictionary = MapDataCache.Data[ChunkPos]
+	for posV3 in LibK.Vectors.vec3_get_pos_in_chunk(chunkPosV3, chunkSize):
+		if(not DictRef.has(posV3)):
+			continue
+		returnDict[posV3] = TileData.new().from_str(DictRef[posV3])
+	return returnDict
 
 ### ----------------------------------------------------
 # Chunk Data System Management
 ### ----------------------------------------------------
 
-
-# Load data from SQLChunk to MapData
-func _load_SQLChunk(SQLChunkPos:Vector3) -> void:
-	var converted = str2var(_sql_load_compressed(TABLE_NAMES.keys()[TABLE_NAMES.MAPDATA_TABLE], SQLChunkPos))
+# Load data from SQLChunk to MapDataCache
+func _load_SQLChunk(ChunkPos:Vector2) -> void:
+	var converted = str2var(_sql_load_compressed(TABLE_NAMES.keys()[TABLE_NAMES.MAPDATA_TABLE], ChunkPos))
 	
-	# Merge data for every stored MapData key
+	# Merge data for every stored MapDataCache key
 	if(converted is Dictionary):
-		MapData.merge(converted)	
-	elif(not converted is String): 
-		Logger.logErr(["Converted loaded sql chunk is not a Dictionary or String! Pos: ", SQLChunkPos], get_stack())
+		MapDataCache.set_in_Data_chunk(ChunkPos, converted)
+	elif(not converted is String):
+		Logger.logErr(["Converted loaded sql chunk is not a Dictionary or String! Pos: ", ChunkPos], get_stack())
 	
 	# Set countdown at max
-	SQLLoadedChunks[SQLChunkPos] = SQL_CT_UNLOAD_NUM
+	SQLLoadedChunks[ChunkPos] = SQL_CT_UNLOAD_NUM
+	if(beVerbose): Logger.logMS(["Loaded SQLChunk: ", ChunkPos])
 
-	# Unload old chunks that were not used for a long time to save RAM
-	for chunkV3 in SQLLoadedChunks.keys():
-		SQLLoadedChunks[chunkV3] -= 1
-		if(SQLLoadedChunks[chunkV3] == 0):
-			_unload_SQLChunk(chunkV3)
+	# Unload old chunks that were not used for a long time
+	for chunk in SQLLoadedChunks.keys():
+		SQLLoadedChunks[chunk] -= 1
+		if(SQLLoadedChunks[chunk] == 0):
+			_unload_SQLChunk(chunk)
 
-# Load data from MapData to SQLChunk
-func _unload_SQLChunk(SQLChunkPos:Vector3) -> void:
-	var PosToUnload := LibK.Vectors.vec3_get_pos_in_chunk(SQLChunkPos, MAPDATA_CHUNK_SIZE)
-	var DictToSave := {}
+# Take data from MapDataCache and save it to SQLChunk
+func _unload_SQLChunk(ChunkPos:Vector2) -> void:
+	var DictToSave := MapDataCache.get_in_Data_chunk(ChunkPos)
+	MapDataCache.rem_in_Data_chunk(ChunkPos)
 	
-	for posV3 in PosToUnload:
-		if(not MapData.has(posV3)): continue
-		DictToSave[posV3] = MapData[posV3]
-		MapData.erase(posV3)
+	_sql_save_compressed(var2str(DictToSave), TABLE_NAMES.keys()[TABLE_NAMES.MAPDATA_TABLE], ChunkPos)
+	SQLLoadedChunks.erase(ChunkPos)
+	if(beVerbose): Logger.logMS(["Unloaded SQLChunk: ", ChunkPos])
 	
-	_sql_save_compressed(var2str(DictToSave), TABLE_NAMES.keys()[TABLE_NAMES.MAPDATA_TABLE], SQLChunkPos)
-	
-	# Get rid of entry fully
-	SQLLoadedChunks.erase(SQLChunkPos)
-
 # Loads requested data from sql database
 # If data is being read from tiles close this should not cause much of performance drag
-func _update_SQLLoadedChunks(SQLChunkPos:Vector3) -> void:
-	if(SQLLoadedChunks.has(SQLChunkPos)): return # Chunk already loaded from sql
-	_load_SQLChunk(SQLChunkPos)
+func _update_SQLLoadedChunks(ChunkPos:Vector2) -> void:
+	if(SQLLoadedChunks.has(ChunkPos)): return # Chunk already loaded from sql
+	_load_SQLChunk(ChunkPos)

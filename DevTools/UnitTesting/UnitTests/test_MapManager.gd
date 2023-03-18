@@ -43,7 +43,7 @@ func test_EntityManager():
 	var ENUM = 10 # Make sure to be in range of render
 	for i in range(1,ENUM):
 		var entity := GameEntity.new()
-		assert_true(SaveManager.add_Entity_to_TileData(Vector3(i+1,0,0), entity))
+		SaveManager.add_Entity_to_TileData(Vector3(i+1,0,0), entity)
 		entity.free()
 	
 	MapManager.update_simulation(true)

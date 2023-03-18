@@ -199,13 +199,13 @@ class NORM_STATE extends SMState:
 		elif(event.is_action_pressed(GLOBAL.INPUT_MAP["="])):
 			change_elevation(1)
 		elif(event.is_action_pressed(GLOBAL.INPUT_MAP["F"])):
-			StateMaster.set_state(Caller.FLTR_STATE.get_name())
+			StateMaster.set_state(Caller.FilterState)
 		elif(event.is_action_pressed(GLOBAL.INPUT_MAP["LCtrl"])):
-			StateMaster.set_state(Caller.SAVE_STATE.get_name())
+			StateMaster.set_state(Caller.SaveState)
 		elif(event.is_action_pressed(GLOBAL.INPUT_MAP["LAlt"])):
-			StateMaster.set_state(Caller.LOAD_STATE.get_name())
+			StateMaster.set_state(Caller.LoadState)
 		elif(event.is_action_pressed(GLOBAL.INPUT_MAP["G"])):
-			StateMaster.set_state(Caller.GOTO_STATE.get_name())
+			StateMaster.set_state(Caller.GoToState)
 	
 	func switch_TM_selection(value:int) -> void:
 		T.TileSelect.TMIndex = value

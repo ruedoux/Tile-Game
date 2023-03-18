@@ -83,16 +83,16 @@ func add_tile_to_TileData(posV3:Vector3, TSName:String, tileID:int) -> bool:
 	return _CurrentSav.add_tile_to_TileData_on(posV3, TSName, tileID)
 
 # Wrapper function, adds Entity in _CurrentSav
-func add_Entity_to_TileData(posV3:Vector3, entity:GameEntity) -> bool:
-	return _CurrentSav.add_Entity_to_TileData(posV3, entity)
+func add_Entity_to_TileData(posV3:Vector3, entity:GameEntity) -> void:
+	_CurrentSav.add_Entity_to_TileData(posV3, entity)
 
 # Wrapper function, remove tile in _CurrentSav
 func remove_tile_from_TileData(TSName:String, posV3:Vector3) -> bool:
 	return _CurrentSav.remove_tile_from_TileData(TSName, posV3)
 
 # Wrapper function, remove entity in _CurrentSav
-func remove_Entity_from_TileData(posV3:Vector3) -> bool:
-	return _CurrentSav.remove_Entity_from_TileData(posV3)
+func remove_Entity_from_TileData(posV3:Vector3) -> void:
+	_CurrentSav.remove_Entity_from_TileData(posV3)
 
 # Wrapper function, checks if TileData was edited in _CurrentSav, if not get tile from _CurrentMap
 func get_TileData_on(posV3:Vector3) -> TileData:
@@ -101,6 +101,7 @@ func get_TileData_on(posV3:Vector3) -> TileData:
 	return savResult
 
 # Wrapper function, checks if TileData was edited in _CurrentSav, if not get tile from _CurrentMap
+# Returns TileData on a given Z level of chunk
 func get_TileData_on_chunk(chunkPosV3:Vector3, chunkSize:int) -> Dictionary:
 	var savResult := _CurrentSav.get_TileData_on_chunk(chunkPosV3, chunkSize)
 	savResult.merge(_CurrentMap.get_TileData_on_chunk(chunkPosV3, chunkSize))

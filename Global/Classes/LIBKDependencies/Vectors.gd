@@ -49,10 +49,10 @@ static func vec3_vec2(v:Vector3) -> Vector2:
 
 
 static func scale_down_vec2(v:Vector2, scale:int) -> Vector2:
-	return Vector2(floor(v[0]/(scale)), floor(v[1]/(scale)))
+	return Vector2(v[0]/scale, v[1]/scale).floor()
 
 static func scale_down_vec3(v:Vector3, scale:int) -> Vector3:
-	return Vector3(floor(v[0]/(scale)), floor(v[1]/(scale)), v[2])
+	return Vector3(v[0]/scale, v[1]/(scale), v[2]).floor()
 
 static func vec2_get_pos_in_chunk(chunkV:Vector2, chunkSize:int) -> Array:
 	var packedPositions := []

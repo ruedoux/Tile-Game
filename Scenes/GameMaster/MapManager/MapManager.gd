@@ -24,7 +24,6 @@ var LoadedChunks:Array = [] # [ Vector3, ... ]
 # FUNCTIONS
 ### ----------------------------------------------------
 
-
 # Connects all signals
 func connect_signals() -> bool:
 	var isOK := true
@@ -100,3 +99,5 @@ func get_chunks_to_load() -> Dictionary:
 		for chunkV3 in sqrRange:
 			ChunksToLoad[chunkV3] = false
 	return ChunksToLoad
+
+	

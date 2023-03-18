@@ -31,11 +31,8 @@ func get_result() -> int:
 func time_from_start(timeToPass:int) -> bool:
 	return (get_result() > timeToPass)
 
-# Just works
-static func delay(timeMS:int) -> void:
+func delay(timeMS:int) -> void:
 	var s := Time.get_ticks_msec()
 	var timePassed := 0
 	while(timePassed < timeMS):
 		timePassed = Time.get_ticks_msec() - s
-		
-	
